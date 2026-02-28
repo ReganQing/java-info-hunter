@@ -9,7 +9,9 @@ import org.springframework.ai.chat.messages.UserMessage;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Agent 基础抽象类
@@ -46,9 +48,9 @@ public abstract class BaseAgent {
     private String nextStepPrompt;
 
     /**
-     * 当前状态
+     * 当前状态（使用 volatile 确保线程可见性）
      */
-    private AgentState agentState = AgentState.IDLE;
+    private volatile AgentState agentState = AgentState.IDLE;
 
     /**
      * ChatClient (Spring AI)
@@ -56,9 +58,9 @@ public abstract class BaseAgent {
     protected ChatClient chatClient;
 
     /**
-     * 消息历史
+     * 消息历史（线程安全的 CopyOnWriteArrayList）
      */
-    protected List<Message> messages = new ArrayList<>();
+    protected List<Message> messages = new CopyOnWriteArrayList<>();
 
     /**
      * 最大执行步数
@@ -66,9 +68,9 @@ public abstract class BaseAgent {
     private int maxSteps = 10;
 
     /**
-     * 当前步数
+     * 当前步数（使用 AtomicInteger 确保线程安全）
      */
-    private int currentStep = 0;
+    private final AtomicInteger currentStep = new AtomicInteger(0);
 
     /**
      * 开始时间
@@ -87,17 +89,20 @@ public abstract class BaseAgent {
      * @return 执行结果
      */
     public String run(String userPrompt) {
-        if (agentState != AgentState.IDLE) {
-            throw new IllegalStateException("Agent is not idle, current state: " + agentState);
-        }
+        // 同步块确保状态检查和转换的原子性
+        synchronized (this) {
+            if (agentState != AgentState.IDLE) {
+                throw new IllegalStateException("Agent is not idle, current state: " + agentState);
+            }
 
-        if (userPrompt == null || userPrompt.isBlank()) {
-            throw new IllegalArgumentException("User prompt cannot be empty");
-        }
+            if (userPrompt == null || userPrompt.isBlank()) {
+                throw new IllegalArgumentException("User prompt cannot be empty");
+            }
 
-        startTime = LocalDateTime.now();
-        cancelled.set(false);
-        agentState = AgentState.RUNNING;
+            startTime = LocalDateTime.now();
+            cancelled.set(false);
+            agentState = AgentState.RUNNING;
+        }
 
         log.info("Agent {} starting execution - Prompt: {}", name,
                 userPrompt.substring(0, Math.min(100, userPrompt.length())));
@@ -109,24 +114,24 @@ public abstract class BaseAgent {
         List<String> results = new ArrayList<>();
 
         try {
-            while (currentStep < maxSteps && agentState == AgentState.RUNNING && !cancelled.get()) {
+            while (currentStep.get() < maxSteps && agentState == AgentState.RUNNING && !cancelled.get()) {
                 if (cancelled.get()) {
-                    log.info("Agent {} execution cancelled at step {}", name, currentStep);
+                    log.info("Agent {} execution cancelled at step {}", name, currentStep.get());
                     agentState = AgentState.FINISHED;
-                    results.add("Execution cancelled at step " + currentStep);
+                    results.add("Execution cancelled at step " + currentStep.get());
                     break;
                 }
 
-                log.debug("Agent {} executing step {}/{}", name, currentStep + 1, maxSteps);
+                log.debug("Agent {} executing step {}/{}", name, currentStep.get() + 1, maxSteps);
                 String stepResult = step();
-                String result = "Step" + currentStep + ": " + stepResult;
+                String result = "Step" + currentStep.get() + ": " + stepResult;
                 results.add(result);
-                currentStep++;
+                currentStep.incrementAndGet();
 
-                log.info("Agent {} step {} completed: {}", name, currentStep,
+                log.info("Agent {} step {} completed: {}", name, currentStep.get(),
                         stepResult.substring(0, Math.min(100, stepResult.length())));
 
-                if (currentStep >= maxSteps) {
+                if (currentStep.get() >= maxSteps) {
                     agentState = AgentState.FINISHED;
                     log.info("Agent {} finished - reached max steps ({})", name, maxSteps);
                     results.add("Terminated: Reached max steps (" + maxSteps + ")");
@@ -139,12 +144,12 @@ public abstract class BaseAgent {
 
             String finalResult = String.join("\n", results);
             log.info("Agent {} execution completed - Duration: {}ms, Steps: {}",
-                    name, getExecutionDurationMillis(), currentStep);
+                    name, getExecutionDurationMillis(), currentStep.get());
             return finalResult;
 
         } catch (Exception e) {
             agentState = AgentState.ERROR;
-            log.error("Agent {} error at step {}", name, currentStep, e);
+            log.error("Agent {} error at step {}", name, currentStep.get(), e);
             return "Error: " + e.getMessage();
         } finally {
             cleanup();
@@ -174,7 +179,14 @@ public abstract class BaseAgent {
      */
     public String getStatusInfo() {
         return String.format("Agent: %s, State: %s, Step: %d/%d, Duration: %dms",
-                name, agentState, currentStep, maxSteps, getExecutionDurationMillis());
+                name, agentState, currentStep.get(), maxSteps, getExecutionDurationMillis());
+    }
+
+    /**
+     * 获取当前步数
+     */
+    public int getCurrentStep() {
+        return currentStep.get();
     }
 
     /**
