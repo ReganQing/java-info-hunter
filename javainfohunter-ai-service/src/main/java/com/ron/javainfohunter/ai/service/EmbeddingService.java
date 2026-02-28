@@ -43,8 +43,7 @@ public class EmbeddingService {
      */
     public List<float[]> embedBatch(List<String> texts) {
         log.debug("Embedding {} texts", texts.size());
-        EmbeddingResponse response = embeddingModel.embedForResponse(texts);
-        return response.getResult().getOutput();
+        return embeddingModel.embed(texts);
     }
 
     /**

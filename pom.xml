@@ -73,6 +73,13 @@
             </snapshots>
         </repository>
 
+        <!-- Aliyun Spring AI 仓库 -->
+        <repository>
+            <id>spring-ai-alibaba</id>
+            <name>Spring AI Alibaba</name>
+            <url>https://maven.aliyun.com/repository/spring</url>
+        </repository>
+
         <!-- Aliyun Mirror (备用) -->
         <repository>
             <id>aliyun-maven</id>

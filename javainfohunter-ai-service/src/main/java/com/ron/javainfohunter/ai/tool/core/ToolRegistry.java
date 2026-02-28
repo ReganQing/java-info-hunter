@@ -1,6 +1,7 @@
 package com.ron.javainfohunter.ai.tool.core;
 
-import org.springframework.ai.model.tool.ToolCallback;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.ai.tool.ToolCallback;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -16,6 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author Ron
  * @since 1.0.0
  */
+@Slf4j
 @Component
 public class ToolRegistry {
 
@@ -30,7 +32,21 @@ public class ToolRegistry {
      * @param tool 工具
      */
     public void registerTool(ToolCallback tool) {
-        String toolName = tool.getName() != null ? tool.getName() : tool.toString();
+        // ToolCallback 接口可能有 name() 方法（函数式接口）
+        String toolName = "tool-" + System.currentTimeMillis();
+        try {
+            // 尝试通过反射获取 name
+            java.lang.reflect.Method getNameMethod = tool.getClass().getMethod("getName");
+            if (getNameMethod != null) {
+                Object name = getNameMethod.invoke(tool);
+                if (name != null) {
+                    toolName = name.toString();
+                }
+            }
+        } catch (Exception e) {
+            // 如果无法获取 name，使用默认名称
+            log.warn("Cannot get tool name, using default: {}", toolName);
+        }
         tools.put(toolName, tool);
     }
 

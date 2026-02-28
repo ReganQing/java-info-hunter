@@ -1,7 +1,7 @@
 package com.ron.javainfohunter.ai.autoconfigure;
 
-import com.alibaba.cloud.ai.dashscope.chat.ChatModel;
-import com.alibaba.cloud.ai.dashscope.embedding.EmbeddingModel;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.embedding.EmbeddingModel;
 import com.ron.javainfohunter.ai.agent.coordinator.AgentManager;
 import com.ron.javainfohunter.ai.agent.coordinator.TaskCoordinator;
 import com.ron.javainfohunter.ai.agent.coordinator.impl.AgentManagerImpl;
@@ -113,7 +113,7 @@ public class AiServiceAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    @ConditionalOnClass(com.alibaba.cloud.ai.dashscope.embedding.EmbeddingModel.class)
+    @ConditionalOnClass(org.springframework.ai.embedding.EmbeddingModel.class)
     public EmbeddingService embeddingService(EmbeddingModel embeddingModel) {
         log.info("Initializing EmbeddingService");
         return new EmbeddingService(embeddingModel);

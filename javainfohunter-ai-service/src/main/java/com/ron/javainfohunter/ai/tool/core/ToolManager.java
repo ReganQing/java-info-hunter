@@ -1,7 +1,7 @@
 package com.ron.javainfohunter.ai.tool.core;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ai.model.tool.ToolCallback;
+import org.springframework.ai.tool.ToolCallback;
 import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
@@ -33,7 +33,7 @@ public class ToolManager implements ApplicationContextAware {
                 .values()
                 .forEach(tool -> {
                     toolRegistry.registerTool(tool);
-                    log.info("Auto-registered tool: {}", tool.getName());
+                    log.info("Auto-registered tool: {}", tool.getClass().getSimpleName());
                 });
     }
 
