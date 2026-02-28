@@ -76,6 +76,13 @@
             <version>${jsonschema.version}</version>
         </dependency>
 
+        <!-- HTML 解析 -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.17.2</version>
+        </dependency>
+
         <!-- Web 依赖 (可选 - 仅用于 REST API) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
