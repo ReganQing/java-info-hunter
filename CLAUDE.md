@@ -4,7 +4,64 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-JavaInfoHunter is a high-performance distributed information collection and intelligent analysis system built with **Java 21** and **Spring Boot 4.0.3**. The project uses virtual threads for high-concurrency crawling, message queues for reliable processing, and **Spring AI + Agent Orchestration** for intelligent content analysis.
+JavaInfoHunter is a high-performance distributed information collection system built with **Java 21** and **Spring Boot 4.0.3**. The project uses **Agent Orchestration** as its core intelligent processing pattern, powered by Spring AI and Alibaba DashScope.
+
+## Project Structure
+
+### Maven Multi-Module Architecture
+
+```
+JavaInfoHunter/                      # 父 POM (packaging=pom)
+├── pom.xml                          # 父 POM，依赖管理
+├── javainfohunter-ai-service/       # ⭐ AI 服务模块 (独立、可复用)
+│   ├── pom.xml
+│   └── src/main/java/.../ai/
+│       ├── agent/                   # Agent 框架核心
+│       │   ├── core/                # BaseAgent, ReActAgent, ToolCallAgent
+│       │   ├── coordinator/         # AgentManager, TaskCoordinator
+│       │   └── specialized/         # 预置 Agent (Crawler, Analysis, etc.)
+│       ├── tool/                    # 工具系统
+│       │   ├── annotation/          # @Tool, @ToolParam
+│       │   ├── core/                # ToolRegistry, ToolManager
+│       │   └── impl/                # 预置工具
+│       ├── service/                 # 服务层 (ChatService, AgentService)
+│       ├── autoconfigure/           # Spring Boot 自动配置
+│       └── config/                  # Agent 配置类
+└── (future modules)                 # 其他业务模块（待添加）
+```
+
+### javainfohunter-ai-service 模块
+
+**核心特性：**
+- ✅ **独立模块**: 可作为 Maven 依赖引入其他项目
+- ✅ **Spring Boot Starter**: 遵循自动配置规范，引入即用
+- ✅ **Agent 编排**: 提供完整的 Agent 协作框架
+- ✅ **线程安全**: 使用 JDK 21 虚拟线程，支持高并发
+
+**使用方式：**
+```xml
+<dependency>
+    <groupId>com.ron</groupId>
+    <artifactId>javainfohunter-ai-service</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+</dependency>
+```
+
+## Build Commands
+
+```bash
+# 构建整个项目
+mvnw.cmd clean package
+
+# 构建 AI 服务模块
+mvnw.cmd clean package -pl javainfohunter-ai-service
+
+# 运行测试
+mvnw.cmd test -pl javainfohunter-ai-service
+
+# 运行单个测试类
+mvnw.cmd test -Dtest=BaseAgentTest -pl javainfohunter-ai-service
+```
 
 ## Build and Development Commands
 
@@ -56,32 +113,54 @@ mvnw.cmd spring-boot:run
 ./mvnw dependency:tree
 ```
 
-## Project Architecture
+## Architecture Overview
 
-### Package Structure
-- `com.ron.javainfohunter` - Root package containing the main application class
-- Standard Spring Boot layering will be organized as the project grows (controller, service, repository, etc.)
+### Agent Orchestration Pattern (核心架构)
 
-### Configuration Profiles
-The application supports multiple Spring profiles for different environments:
+**设计理念：** 所有复杂的 AI 推理、多步处理、工具调用任务都应使用 Agent 编排，而非传统 Service 层代码。
 
-- **develop** (`application-develop.yml`) - Development environment with virtual threads enabled
-- **production** (`application-production.yml`) - Production environment with virtual threads enabled
-- **example** (`application-example.yml`) - Example configuration reference
+**三层 Agent 架构：**
+```
+BaseAgent (状态管理、生命周期)
+    ↓
+ReActAgent (think-act 循环)
+    ↓
+ToolCallAgent (Spring AI ChatClient、工具回调)
+    ↓
+Specialized Agents (业务 Agent)
+```
 
-### Key Technologies
-- **Spring Boot 4.0.3** - Core framework
-- **Java 21** - Language version with Virtual Threads
-- **Spring AI 1.0.2** - AI integration framework
-- **Spring AI Alibaba** - Alibaba DashScope integration
-- **Lombok** - Annotation-based code generation
-- **Virtual Threads** - Enabled for improved concurrency (Spring Boot 4.0+ feature)
-- **Agent Orchestration** - Multi-agent collaboration using ReAct pattern
+**三种协作模式：**
+
+1. **Chain 模式** - 顺序执行，输出作为下一个的输入
+   ```java
+   taskCoordinator.executeChain("任务", List.of("agent1", "agent2", "agent3"));
+   ```
+
+2. **Parallel 模式** - 并行执行，使用虚拟线程（性能提升 3 倍）
+   ```java
+   taskCoordinator.executeParallel("任务", List.of("agent1", "agent2", "agent3"));
+   ```
+
+3. **Master-Worker 模式** - 主从协作（待实现）
+   ```java
+   taskCoordinator.executeMasterWorker("任务", "master", List.of("worker1", "worker2"));
+   ```
+
+### 关键技术决策
+
+| 技术 | 版本 | 用途 |
+|------|------|------|
+| Spring Boot | 4.0.3 | 核心框架 |
+| Java | 21 | 虚拟线程支持 |
+| Spring AI | 1.0.2 | AI 抽象层 |
+| Spring AI Alibaba | 1.0.0-M2.1 | 阿里云通义千问 |
+| Lombok | 1.18.36 | 代码生成 |
 
 ## Agent Orchestration Rules (CRITICAL)
 
 ### General Principle
-**JavaInfoHunter adopts Agent Orchestration as its core intelligent processing pattern.** All complex business logic that requires AI reasoning, multi-step processing, or tool usage should be implemented using Agent orchestration rather than traditional service layer code.
+**使用 Agent 编排模式实现所有 AI 驱动的复杂业务逻辑。**
 
 ### When to Use Agent Orchestration
 
@@ -99,215 +178,125 @@ The application supports multiple Spring profiles for different environments:
 3. Static business rules without AI involvement
 4. Performance-critical simple operations (< 10ms)
 
-### Agent Architecture Hierarchy
 
-```
-BaseAgent (Abstract)
-    ↓ - State management, lifecycle
-ReActAgent (Abstract)
-    ↓ - think()-act() cycle
-ToolCallAgent (Abstract)
-    ↓ - Spring AI ChatClient, tool callbacks
-Specialized Agents (Concrete)
-    - CrawlerAgent, AnalysisAgent, SummaryAgent, etc.
-```
+### Agent Implementation Pattern
 
-### Collaboration Patterns
+1. **继承合适的基类**：
+   - 需要 AI 推理 + 工具调用 → `ToolCallAgent`
+   - 只需要 AI 推理 → `ReActAgent`
 
-**1. Chain Pattern** - Sequential processing where output of one agent feeds into the next:
+2. **注册到 AgentManager**：
+   ```java
+   @Configuration
+   public class Config {
+       @Autowired
+       private AgentManager agentManager;
+
+       @PostConstruct
+       public void register() {
+           agentManager.registerAgent("my-agent", myAgent);
+       }
+   }
+   ```
+
+3. **使用 TaskCoordinator 编排**：
+   ```java
+   @Autowired
+   private TaskCoordinator taskCoordinator;
+
+   CoordinationResult result = taskCoordinator.executeParallel(
+       "任务描述",
+       List.of("agent1", "agent2", "agent3")
+   );
+   ```
+
+## javainfohunter-ai-service 模块详解
+
+### 核心组件
+
+| 组件 | 路径 | 职责 |
+|------|------|------|
+| **Agent 核心** | `agent/core/` | BaseAgent, ReActAgent, ToolCallAgent |
+| **协调器** | `agent/coordinator/` | AgentManager, TaskCoordinator, CollaborationPattern |
+| **工具系统** | `tool/` | @Tool 注解, ToolRegistry, ToolManager |
+| **预置 Agent** | `agent/specialized/` | CrawlerAgent, AnalysisAgent, SummaryAgent, ClassificationAgent |
+| **预置工具** | `tool/impl/` | HtmlParserTool, TextSummarizationTool |
+| **服务层** | `service/` | ChatService, EmbeddingService, AgentService |
+| **自动配置** | `autoconfigure/` | AiServiceAutoConfiguration, AiServiceProperties |
+
+### 线程安全设计
+
+**并发安全组件：**
+- `AgentManager`: ConcurrentHashMap 存储 Agent
+- `ToolRegistry`: ConcurrentHashMap 存储工具
+- `BaseAgent`:
+  - `volatile AgentState` - 状态可见性
+  - `AtomicInteger currentStep` - 步数原子性
+  - `CopyOnWriteArrayList<Message>` - 消息历史线程安全
+  - `synchronized` 状态检查块
+
+**虚拟线程使用：**
 ```java
-taskCoordinator.executeChain(
-    "Process and analyze news content",
-    List.of("crawler-agent", "analysis-agent", "summary-agent")
-);
+// TaskCoordinatorImpl.java
+Executors.newVirtualThreadPerTaskExecutor()
 ```
 
-**2. Parallel Pattern** - Multiple agents work independently on the same task:
-```java
-taskCoordinator.executeParallel(
-    "Multi-dimensional analysis",
-    List.of("sentiment-agent", "classification-agent", "keyword-agent")
-);
-```
+### Spring Boot Auto-Configuration
 
-**3. Master-Worker Pattern** - Coordinator delegates tasks and aggregates results:
-```java
-taskCoordinator.executeMasterWorker(
-    "Generate comprehensive report",
-    "coordinator-agent",  // Master
-    List.of("crawler-agent", "analysis-agent", "summary-agent")  // Workers
-);
-```
+**自动配置的 Bean：**
+- ChatClient (Spring AI 聊天客户端)
+- AgentManager (Agent 管理器)
+- TaskCoordinator (任务协调器)
+- ToolRegistry (工具注册表)
+- ToolManager (工具管理器)
+- ChatService, EmbeddingService, AgentService
 
-### Agent Implementation Guidelines
+**配置文件：**
+```yaml
+javainfohunter:
+  ai:
+    enabled: true
+    agent:
+      max-steps: 10
 
-1. **Inherit from appropriate base class**:
-   - Simple AI tasks: Extend `ReActAgent`
-   - Tool-required tasks: Extend `ToolCallAgent`
-   - Always use Spring AI `ChatClient` for LLM integration
-
-2. **Define clear responsibilities**:
-   - Each agent should have a single, well-defined purpose
-   - Agent name should clearly indicate its function
-   - System prompt should define role and constraints
-
-3. **Implement tools properly**:
-   - Tools should be simple, focused functions
-   - Use `@ToolCallback` annotation for Spring AI tool registration
-   - Tools should be stateless and thread-safe
-
-4. **Handle errors gracefully**:
-   - Set agent state to ERROR on failures
-   - Log errors with context (agent name, step, task)
-   - Implement retry logic for transient failures
-
-5. **Resource management**:
-   - Override `cleanup()` to release resources
-   - Use virtual threads for blocking I/O
-   - Limit max steps to prevent infinite loops
-
-### Example: Creating a New Agent
-
-```java
-@Component
-public class CustomAnalysisAgent extends ToolCallAgent {
-
-    private static final String SYSTEM_PROMPT = """
-        You are a specialized content analysis agent.
-        Your task is to analyze content and extract key insights.
-        """;
-
-    @Autowired
-    private ChatClient chatClient;
-
-    public CustomAnalysisAgent() {
-        super(new ToolCallback[]{
-            // Define tools here
-        });
-    }
-
-    @Override
-    public void cleanup() {
-        // Release resources
-    }
-}
-```
-
-### Agent Registration
-
-All agents must be registered with `AgentManager`:
-
-```java
-@Configuration
-public class AgentConfig {
-
-    @Autowired
-    private AgentManager agentManager;
-
-    @PostConstruct
-    public void registerAgents() {
-        agentManager.registerAgent("custom-agent", customAnalysisAgent);
-    }
-}
-```
-
-## Integration with Ron-AI-Agent
-
-The project integrates the `ron-ai-agent` framework (located at `D:\Projects\BackEnd\ron-ai-agent`) as a Maven module. When working with agent code:
-
-1. **Reference existing patterns** from `ron-ai-agent` before creating new agents
-2. **Reuse core abstractions**: BaseAgent, ReActAgent, ToolCallAgent
-3. **Follow naming conventions**: Agents end with "Agent", tools end with "Tool"
-4. **Use Spring AI** instead of LangChain4j for LLM integration
-5. **Leverage coordinator patterns** for multi-agent workflows
-
-## Configuration Notes
-
-- Virtual threads are explicitly enabled in both `develop` and `production` profiles
-- The project uses the Maven Wrapper (`mvnw`/`mvnw.cmd`) for consistent builds across environments
-- Lombok is configured as an annotation processor in the Maven compiler plugin
-- Spring AI requires `DASHSCOPE_API_KEY` environment variable for Alibaba DashScope integration
-
-## Technology Stack Details
-
-### AI Framework
-- **Spring AI 1.0.2**: Primary AI abstraction layer
-- **Spring AI Alibaba 1.0.0-M2.1**: Alibaba DashScope (通义千问) integration
-- **ChatClient**: Spring AI's fluent API for LLM interactions
-- **Advisors**: Chat memory, RAG (Retrieval-Augmented Generation), question answering
-
-### Data Storage
-- **PostgreSQL 16 + pgvector**: Relational database with vector similarity search
-- **Redis 7.x**: Caching, distributed locks, and rate limiting
-- **HikariCP**: High-performance JDBC connection pooling
-
-### Message Queue
-- **RabbitMQ 3.x**: Message broker for async processing
-- **Spring AMQP**: RabbitMQ integration with manual ACK support
-
-### Web Scraping
-- **Jsoup 1.17.x**: HTML parsing and content extraction
-- **java.net.http.HttpClient**: Java 11+ native HTTP client with virtual thread support
-
-### Monitoring & Documentation
-- **Spring Boot Actuator**: Application health and metrics
-- **Knife4j 4.5.0**: Enhanced Swagger UI (access at `/doc.html`)
-
-### Utilities
-- **Hutool 5.8.38**: Java utility library
-- **Lombok 1.18.36**: Code generation annotations
-
-## Module Structure (Planned)
-
-```
-JavaInfoHunter/
-├── javainfohunter-agent/         # Agent orchestration framework
-├── javainfohunter-crawler/       # Web crawling module
-├── javainfohunter-processor/     # Content processing with agents
-├── javainfohunter-api/           # REST API layer
-└── javainfohunter-common/        # Shared utilities
+spring:
+  ai:
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY}
 ```
 
 ## Environment Variables
 
-Required environment variables for development:
+### Required Environment Variables
 
 ```bash
-# Alibaba DashScope API (Required for AI features)
+# Alibaba DashScope API (必需，用于 AI 功能)
 export DASHSCOPE_API_KEY=your-api-key-here
-
-# Database (Required)
-export DATABASE_URL=jdbc:postgresql://localhost:5432/javainfohunter
-export DATABASE_USERNAME=admin
-export DATABASE_PASSWORD=admin
-
-# Redis (Required)
-export REDIS_HOST=localhost
-export REDIS_PORT=6379
-
-# RabbitMQ (Required)
-export RABBITMQ_HOST=localhost
-export RABBITMQ_PORT=5672
-export RABBITMQ_USERNAME=admin
-export RABBITMQ_PASSWORD=admin
 ```
 
 ## Quick Reference
 
-### Starting Development Environment
+### 构建和运行
 ```bash
-# 1. Start infrastructure
-docker-compose up -d
+# 构建项目
+mvnw.cmd clean package
 
-# 2. Set environment variables
-export DASHSCOPE_API_KEY=your-key
+# 运行测试
+mvnw.cmd test -pl javainfohunter-ai-service
 
-# 3. Run application
-./mvnw spring-boot:run -Dspring-boot.run.profiles=develop
+# 查看依赖树
+mvnw.cmd dependency:tree
 ```
 
-### Accessing Services
-- Application API: http://localhost:8080
-- API Documentation (Knife4j): http://localhost:8080/doc.html
-- Health Check: http://localhost:8080/actuator/health
-- RabbitMQ Management: http://localhost:15672 (admin/admin)
+### 关键文档
+- [USAGE.md](javainfohunter-ai-service/USAGE.md) - AI 服务模块使用指南
+- [README.md](javainfohunter-ai-service/README.md) - 模块说明文档
+- [迁移完成总结.md](docs/迁移完成总结.md) - 技术实现细节
+
+### 预置 Agent 列表
+| Agent ID | 名称 | 功能 |
+|----------|------|------|
+| `crawler-agent` | CrawlerAgent | 网页爬取和内容提取 |
+| `analysis-agent` | AnalysisAgent | 内容深度分析 |
+| `summary-agent` | SummaryAgent | 文本摘要生成 |
+| `classification-agent` | ClassificationAgent | 内容分类和标签 |
