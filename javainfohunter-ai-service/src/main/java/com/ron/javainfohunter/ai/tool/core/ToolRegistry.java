@@ -1,0 +1,80 @@
+package com.ron.javainfohunter.ai.tool.core;
+
+import org.springframework.ai.model.tool.ToolCallback;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * 工具注册表
+ * <p>
+ * 管理所有可用的工具，提供注册、查询功能
+ * </p>
+ *
+ * @author Ron
+ * @since 1.0.0
+ */
+@Component
+public class ToolRegistry {
+
+    /**
+     * 工具存储（线程安全）
+     */
+    private final Map<String, ToolCallback> tools = new ConcurrentHashMap<>();
+
+    /**
+     * 注册工具
+     *
+     * @param tool 工具
+     */
+    public void registerTool(ToolCallback tool) {
+        String toolName = tool.getName() != null ? tool.getName() : tool.toString();
+        tools.put(toolName, tool);
+    }
+
+    /**
+     * 批量注册工具
+     *
+     * @param tools 工具列表
+     */
+    public void registerTools(List<ToolCallback> tools) {
+        tools.forEach(tool -> registerTool(tool));
+    }
+
+    /**
+     * 获取指定工具
+     *
+     * @param name 工具名称
+     * @return 工具（如果存在）
+     */
+    public ToolCallback getTool(String name) {
+        return tools.get(name);
+    }
+
+    /**
+     * 获取所有工具
+     *
+     * @return 工具数组
+     */
+    public ToolCallback[] getAllTools() {
+        return tools.values().toArray(new ToolCallback[0]);
+    }
+
+    /**
+     * 获取工具数量
+     *
+     * @return 工具数量
+     */
+    public int getToolCount() {
+        return tools.size();
+    }
+
+    /**
+     * 清空所有工具
+     */
+    public void clear() {
+        tools.clear();
+    }
+}
