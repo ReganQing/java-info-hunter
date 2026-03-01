@@ -253,16 +253,19 @@ Executors.newVirtualThreadPerTaskExecutor()
 
 **配置文件：**
 ```yaml
-javainfohunter:
-  ai:
-    enabled: true
-    agent:
-      max-steps: 10
-
 spring:
   ai:
     dashscope:
-      api-key: ${DASHSCOPE_API_KEY}
+      api-key: ${DASHSCOPE_API_KEY}  # 必需：阿里云通义千问 API Key
+
+javainfohunter:
+  ai:
+    enabled: true  # 是否启用 AI 服务，默认 true
+    agent:
+      max-steps: 10  # Agent 最大执行步数，防止无限循环，默认 10
+      timeout: 300  # Agent 执行超时时间（秒），默认 300
+    tool:
+      auto-discovery: true  # 是否自动扫描并注册 @Tool 注解的方法，默认 true
 ```
 
 ## Environment Variables

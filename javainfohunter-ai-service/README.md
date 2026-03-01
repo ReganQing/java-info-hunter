@@ -15,6 +15,24 @@
 
 ## 快速开始
 
+### 0. 配置 Maven 仓库（必需）
+
+在项目的父 POM 或 `~/.m2/settings.xml` 中添加 Spring Milestone 仓库，否则无法解析 Spring AI 依赖：
+
+**在 pom.xml 中添加：**
+```xml
+<repositories>
+    <repository>
+        <id>spring-milestones</id>
+        <name>Spring Milestones</name>
+        <url>https://repo.spring.io/milestone</url>
+        <snapshots>
+            <enabled>false</enabled>
+        </snapshots>
+    </repository>
+</repositories>
+```
+
 ### 1. 添加依赖
 
 在主项目的 `pom.xml` 中添加：
@@ -35,16 +53,16 @@
 spring:
   ai:
     dashscope:
-      api-key: ${DASHSCOPE_API_KEY}  # 阿里云通义千问 API Key
+      api-key: ${DASHSCOPE_API_KEY}  # 必需：阿里云通义千问 API Key
 
 javainfohunter:
   ai:
-    enabled: true
+    enabled: true  # 是否启用 AI 服务，默认 true
     agent:
-      max-steps: 10
-      timeout: 300
+      max-steps: 10  # Agent 最大执行步数，防止无限循环，默认 10
+      timeout: 300  # Agent 执行超时时间（秒），默认 300
     tool:
-      auto-discovery: true
+      auto-discovery: true  # 是否自动扫描并注册 @Tool 注解的方法，默认 true
 ```
 
 ### 3. 创建自定义 Agent
@@ -58,17 +76,11 @@ public class MyAnalysisAgent extends ToolCallAgent {
             你的任务是分析新闻内容并提取关键信息。
             """;
 
-    @Autowired
-    private ChatClient chatClient;
-
-    @Autowired
-    private ToolRegistry toolRegistry;
-
     public MyAnalysisAgent() {
-        super(toolRegistry.getAllTools());
+        super(new ToolCallback[0]);  // 空数组，稍后通过 setter 注入
         setName("MyAnalysisAgent");
+        setDescription("自定义分析 Agent");
         setSystemPrompt(SYSTEM_PROMPT);
-        setChatClient(chatClient);
     }
 
     @Override
@@ -88,10 +100,22 @@ public class AgentConfig {
     private AgentManager agentManager;
 
     @Autowired
+    private ChatClient chatClient;
+
+    @Autowired
+    private ToolRegistry toolRegistry;
+
+    @Autowired
     private MyAnalysisAgent myAnalysisAgent;
 
     @PostConstruct
     public void registerAgents() {
+        // 注入依赖
+        ToolCallback[] tools = toolRegistry.getAllTools().toArray(new ToolCallback[0]);
+        myAnalysisAgent.setChatClient(chatClient);
+        myAnalysisAgent.setAvailableTools(tools);
+
+        // 注册到 AgentManager
         agentManager.registerAgent("analysis-agent", myAnalysisAgent);
     }
 }
