@@ -1,0 +1,123 @@
+# ========================================
+# RabbitMQ Configuration Example
+# ========================================
+# Copy this configuration to your application.yml or application-dev.yml
+
+spring:
+  rabbitmq:
+    # Connection Settings
+    host: localhost
+    port: 25672
+    username: admin
+    password: admin123
+    virtual-host: javainfohunter
+
+    # Connection Pool (Optional - for high concurrency)
+    cache:
+      connection:
+        mode: channel
+        size: 10
+      channel:
+        size: 25
+        checkout-timeout: 30s
+
+    # Listener Settings
+    listener:
+      simple:
+        concurrency: 3
+        max-concurrency: 10
+        prefetch: 1
+        auto-startup: true
+        default-requeue-rejected: true
+        acknowledge-mode: auto
+
+        # Retry Configuration
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1000ms
+          multiplier: 2.0
+          max-interval: 10000ms
+
+    # Publisher Settings
+    publisher-confirm-type: correlated
+    publisher-returns: true
+
+    # Template Settings
+    template:
+      retry:
+        enabled: true
+        max-attempts: 3
+        initial-interval: 1000ms
+        multiplier: 2.0
+        max-interval: 10000ms
+
+# ========================================
+# Custom RabbitMQ Properties
+# ========================================
+javainfohunter:
+  rabbitmq:
+    # Queue Definitions
+    queues:
+      crawler-queue:
+        name: crawler.tasks
+        durable: true
+        exclusive: false
+        auto-delete: false
+
+      analysis-queue:
+        name: analysis.tasks
+        durable: true
+        exclusive: false
+        auto-delete: false
+
+      summary-queue:
+        name: summary.tasks
+        durable: true
+        exclusive: false
+        auto-delete: false
+
+    # Exchange Definitions
+    exchanges:
+      task-exchange:
+        name: tasks.exchange
+        type: direct
+        durable: true
+
+    # Binding Definitions
+    bindings:
+      - queue: crawler-queue
+        exchange: task-exchange
+        routing-key: task.crawler
+
+      - queue: analysis-queue
+        exchange: task-exchange
+        routing-key: task.analysis
+
+      - queue: summary-queue
+        exchange: task-exchange
+        routing-key: task.summary
+
+    # Dead Letter Configuration
+    dead-letter:
+      exchange: dead.letter.exchange
+      queue: dead.letter.queue
+      routing-key: dead.letter
+
+# ========================================
+# Alternative Configuration using Environment Variables
+# ========================================
+# Set these environment variables instead of hardcoding:
+# RABBITMQ_HOST=localhost
+# RABBITMQ_PORT=25672
+# RABBITMQ_USER=admin
+# RABBITMQ_PASSWORD=admin123
+# RABBITMQ_VHOST=javainfohunter
+
+spring:
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:25672}
+    username: ${RABBITMQ_USER:admin}
+    password: ${RABBITMQ_PASSWORD:admin123}
+    virtual-host: ${RABBITMQ_VHOST:javainfohunter}

@@ -1,0 +1,40 @@
+spring:
+  # 允许 Bean 覆盖（解决 Spring AI 和 Spring AI Alibaba 的冲突）
+  main:
+    allow-bean-definition-overriding: true
+
+  # 排除所有 Spring AI 自动配置（通过配置文件方式，避免编译错误）
+  autoconfigure:
+    exclude:
+      # 排除 Spring AI 官方自动配置
+      - org.springframework.ai.autoconfigure.chat.client.ChatClientAutoConfiguration
+      - org.springframework.ai.model.chat.client.autoconfigure.ChatClientAutoConfiguration
+      - org.springframework.ai.autoconfigure.retry.SpringAiRetryAutoConfiguration
+      - org.springframework.ai.autoconfigure.SpringAiAutoConfiguration
+      # 排除 Spring AI Alibaba 自动配置（测试环境不需要）
+      - com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeAutoConfiguration
+      - com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeChatAutoConfiguration
+      - com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeAgentAutoConfiguration
+
+  ai:
+    dashscope:
+      # 设置测试占位符 API Key（避免 Bean 创建失败）
+      api-key: test-placeholder-key-not-for-production
+      enabled: false
+
+  rabbitmq:
+    host: localhost
+    port: 25672
+    username: admin
+    password: admin123
+    publisher-confirm-type: correlated
+    publisher-returns: true
+
+rabbitmq:
+  listener:
+    simple:
+      acknowledge-mode: manual
+      retry:
+        enabled: true
+        max-attempts: 3
+        initial-interval: 2000

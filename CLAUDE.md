@@ -258,6 +258,26 @@ spring:
     dashscope:
       api-key: ${DASHSCOPE_API_KEY}  # 必需：阿里云通义千问 API Key
 
+  # 数据库配置
+  datasource:
+    url: jdbc:postgresql://localhost:5432/javainfohunter
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+
+  # RabbitMQ 配置（Phase 3 实现）
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:admin}
+    password: ${RABBITMQ_PASSWORD:admin}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+
 javainfohunter:
   ai:
     enabled: true  # 是否启用 AI 服务，默认 true
@@ -275,6 +295,10 @@ javainfohunter:
 ```bash
 # Alibaba DashScope API (必需，用于 AI 功能)
 export DASHSCOPE_API_KEY=your-api-key-here
+
+# Database (必需，用于数据持久化)
+export DB_USERNAME=postgres
+export DB_PASSWORD=your-password
 ```
 
 ## Quick Reference
@@ -295,6 +319,10 @@ mvnw.cmd dependency:tree
 - [USAGE.md](javainfohunter-ai-service/USAGE.md) - AI 服务模块使用指南
 - [README.md](javainfohunter-ai-service/README.md) - 模块说明文档
 - [迁移完成总结.md](docs/迁移完成总结.md) - 技术实现细节
+- [技术方案.md](docs/技术方案.md) - 完整的系统技术方案
+- [数据传输架构设计.md](docs/数据传输架构设计.md) - 消息队列架构设计
+- [数据库设计说明.md](docs/数据库设计说明.md) - 数据库表结构和索引设计
+- [数据库使用指南.md](docs/数据库使用指南.md) - Repository 使用示例和最佳实践
 
 ### 预置 Agent 列表
 | Agent ID | 名称 | 功能 |
@@ -303,3 +331,97 @@ mvnw.cmd dependency:tree
 | `analysis-agent` | AnalysisAgent | 内容深度分析 |
 | `summary-agent` | SummaryAgent | 文本摘要生成 |
 | `classification-agent` | ClassificationAgent | 内容分类和标签 |
+
+## Database Quick Reference
+
+### 核心表
+
+| 表名 | 用途 | 主要字段 |
+|------|------|---------|
+| **rss_sources** | RSS 订阅源 | url, name, category, is_active, last_crawled_at |
+| **raw_content** | 原始内容 | rss_source_id, title, content_hash, processing_status, embedding |
+| **news** | 处理后新闻 | raw_content_id, summary, topics, keywords, sentiment, importance_score |
+| **agent_executions** | Agent 执行记录 | agent_id, agent_type, execution_id, status, input_data, output_data |
+
+### 数据库配置
+
+```yaml
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/javainfohunter
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+```
+
+### Repository 使用示例
+
+```java
+// 查找活跃的 RSS 源
+List<RssSource> activeSources = rssSourceRepository.findByIsActiveTrue();
+
+// 查找待处理内容
+List<RawContent> pending = rawContentRepository.findByProcessingStatus(
+    RawContent.ProcessingStatus.PENDING
+);
+
+// 查找已发布的新闻
+Page<News> publishedNews = newsRepository.findByIsPublishedTrueOrderByPublishedAtDesc(
+    PageRequest.of(0, 10)
+);
+
+// 记录 Agent 执行
+AgentExecution execution = AgentExecution.builder()
+    .agentId("crawler-agent")
+    .executionId(UUID.randomUUID().toString())
+    .status(AgentExecution.ExecutionStatus.RUNNING)
+    .startTime(Instant.now())
+    .build();
+agentExecutionRepository.save(execution);
+```
+
+### 数据库迁移
+
+```bash
+# 查看迁移状态
+mvnw.cmd flyway:info
+
+# 手动执行迁移
+mvnw.cmd flyway:migrate
+
+# 修复迁移状态（仅开发环境）
+mvnw.cmd flyway:repair
+```
+
+### 性能优化建议
+
+```sql
+-- 查找待爬取的源（使用复合索引）
+SELECT * FROM rss_sources
+WHERE is_active = TRUE
+  AND (last_crawled_at IS NULL OR last_crawled_at < NOW() - INTERVAL '1 hour')
+ORDER BY last_crawled_at ASC NULLS LAST;
+
+-- 向量相似度搜索（使用 IVFFlat 索引）
+SELECT * FROM raw_content
+ORDER BY embedding <=> '[0.1, 0.2, ...]'
+LIMIT 10;
+
+-- 全文搜索（使用 GIN 索引）
+SELECT * FROM news
+WHERE to_tsvector('english', title || ' ' || summary)
+      @@ to_tsquery('english', 'machine & learning')
+ORDER BY ts_rank(...) DESC
+LIMIT 20;
+```

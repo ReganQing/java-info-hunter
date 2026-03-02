@@ -12,6 +12,9 @@
 - ✅ **Spring AI 集成**: 完全集成 Spring AI Alibaba (DashScope)
 - ✅ **虚拟线程**: 使用 JDK 21 虚拟线程实现高并发
 - ✅ **自动配置**: Spring Boot Starter 规范，引入即用
+- ✅ **数据持久化**: 完整的 JPA Entity 和 Repository 层，支持 PostgreSQL + pgvector
+- ✅ **向量搜索**: 集成 pgvector 扩展，支持语义相似度搜索
+- ✅ **数据库迁移**: 使用 Flyway 进行版本化管理
 
 ## 快速开始
 
@@ -315,7 +318,93 @@ double similarity = embeddingService.cosineSimilarity(vector1, vector2);
 - **Java**: 21+
 - **Spring Boot**: 4.0.3
 - **Spring AI Alibaba**: 1.0.0.2
+- **数据库**: PostgreSQL 16+ with pgvector
+- **ORM**: Spring Data JPA (Hibernate)
+- **迁移工具**: Flyway
 - **构建工具**: Maven
+
+## 数据库支持
+
+本模块包含完整的数据库持久化层，支持以下特性：
+
+### Entity 实体类
+
+- `RssSource`: RSS 订阅源管理
+- `RawContent`: 原始内容存储
+- `News`: 处理后的新闻文章
+- `AgentExecution`: Agent 执行追踪
+
+### Repository 接口
+
+- `RssSourceRepository`: RSS 源数据访问
+- `RawContentRepository`: 原始内容数据访问
+- `NewsRepository`: 新闻文章数据访问
+- `AgentExecutionRepository`: Agent 执行记录访问
+
+### 数据库特性
+
+- ✅ **向量搜索**: 使用 pgvector 进行语义相似度搜索
+- ✅ **全文搜索**: 使用 PostgreSQL GIN 索引进行全文搜索
+- ✅ **自动迁移**: Flyway 自动执行数据库迁移脚本
+- ✅ **连接池**: HikariCP 高性能连接池
+- ✅ **审计日志**: 自动记录创建和更新时间
+
+### 快速启用数据库功能
+
+1. **配置数据源**:
+
+```properties
+# application.properties
+spring.datasource.url=jdbc:postgresql://localhost:5432/javainfohunter
+spring.datasource.username=postgres
+spring.datasource.password=${DB_PASSWORD}
+spring.flyway.enabled=true
+```
+
+2. **创建数据库**:
+
+```bash
+psql -U postgres -c "CREATE DATABASE javainfohunter;"
+psql -U postgres -d javainfohunter -c "CREATE EXTENSION IF NOT EXISTS vector;"
+```
+
+3. **启动应用**:
+
+```bash
+mvnw.cmd spring-boot:run
+```
+
+Flyway 会自动执行迁移脚本，创建所有表和索引。
+
+### 使用示例
+
+```java
+@Autowired
+private RssSourceRepository rssSourceRepository;
+
+@Autowired
+private RawContentRepository rawContentRepository;
+
+@Autowired
+private NewsRepository newsRepository;
+
+// 查找活跃的 RSS 源
+List<RssSource> sources = rssSourceRepository.findByIsActiveTrue();
+
+// 查找待处理内容
+List<RawContent> pending = rawContentRepository.findByProcessingStatus(
+    RawContent.ProcessingStatus.PENDING
+);
+
+// 查找已发布的新闻
+Page<News> news = newsRepository.findByIsPublishedTrueOrderByPublishedAtDesc(
+    PageRequest.of(0, 20)
+);
+```
+
+详细文档请参考：
+- [数据库设计说明.md](../docs/数据库设计说明.md)
+- [数据库使用指南.md](../docs/数据库使用指南.md)
 
 ## 许可证
 
