@@ -1,0 +1,41 @@
+spring:
+  # Database Configuration for Development
+  datasource:
+    url: jdbc:postgresql://localhost:5432/javainfohunter
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:}
+
+  # JPA Configuration for Development
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+  # RabbitMQ Configuration for Development
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:admin}
+    password: ${RABBITMQ_PASSWORD:admin}
+
+# Crawler Configuration for Development
+javainfohunter:
+  crawler:
+    scheduler:
+      initial-delay: 5000  # 5 seconds for faster startup in dev
+      fixed-rate: 300000   # 5 minutes for more frequent crawling in dev
+
+    feed:
+      connection-timeout: 15000  # 15 seconds
+      read-timeout: 30000       # 30 seconds
+
+# Logging Configuration for Development
+logging:
+  level:
+    root: INFO
+    com.ron.javainfohunter: DEBUG
+    org.springframework.amqp: DEBUG
+    org.springframework.amqp.rabbit.connection: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE

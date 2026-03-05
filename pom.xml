@@ -38,6 +38,7 @@
     <!-- 子模块 -->
     <modules>
         <module>javainfohunter-ai-service</module>
+        <module>javainfohunter-crawler</module>
     </modules>
 
     <!-- 依赖管理 -->
@@ -57,6 +58,18 @@
                 <groupId>com.ron</groupId>
                 <artifactId>javainfohunter-ai-service</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+
+            <!-- Rome RSS/Atom Feed Parser -->
+            <dependency>
+                <groupId>com.rometools</groupId>
+                <artifactId>rome</artifactId>
+                <version>1.19.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.rometools</groupId>
+                <artifactId>rome-modules</artifactId>
+                <version>1.19.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -115,6 +128,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
+                    <skip>false</skip>
                     <excludes>
                         <exclude>
                             <groupId>org.projectlombok</groupId>
