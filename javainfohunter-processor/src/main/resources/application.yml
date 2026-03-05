@@ -1,0 +1,146 @@
+spring:
+  application:
+    name: content-processor
+
+  # Profile Management
+  profiles:
+    group:
+      develop:
+        - "develop"
+        - "database"
+
+  # Database Configuration
+  datasource:
+    url: jdbc:postgresql://localhost:5432/javainfohunter
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  # JPA Configuration
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+
+  # Flyway Configuration
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    validate-on-migrate: true
+
+  # RabbitMQ Configuration
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:admin}
+    password: ${RABBITMQ_PASSWORD:admin}
+    virtual-host: ${RABBITMQ_VHOST:/}
+    publisher-confirm-type: correlated
+    publisher-returns: true
+    listener:
+      simple:
+        acknowledge-mode: manual
+        prefetch: 10
+        concurrency: 5
+        max-concurrency: 20
+    connection-timeout: 15000
+    cache:
+      channel:
+        size: 25
+      connection:
+        mode: channel
+
+# Spring AI DashScope Configuration
+spring:
+  ai:
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY}
+      chat:
+        options:
+          model: qwen-max
+          temperature: 0.7
+
+# Processor Module Configuration
+javainfohunter:
+  processor:
+    # Enable/disable processor
+    enabled: ${PROCESSOR_ENABLED:true}
+
+    # Agent Configuration
+    agent:
+      # Maximum steps for agent execution
+      max-steps: ${AGENT_MAX_STEPS:10}
+      # Agent execution timeout in seconds
+      timeout: ${AGENT_TIMEOUT:300}
+      # Number of retry attempts for failed agent execution
+      max-retries: ${AGENT_MAX_RETRIES:3}
+      # Retry backoff in milliseconds
+      retry-backoff: ${AGENT_RETRY_BACKOFF:5000}
+
+    # Embedding Configuration
+    embedding:
+      # Enable/disable embedding generation
+      enabled: ${EMBEDDING_ENABLED:true}
+      # Embedding model
+      model: ${EMBEDDING_MODEL:text-embedding-v3}
+      # Batch size for embedding generation
+      batch-size: ${EMBEDDING_BATCH_SIZE:10}
+
+    # Processing Configuration
+    processing:
+      # Number of threads for parallel processing
+      thread-pool-size: ${PROCESSING_THREAD_POOL_SIZE:10}
+      # Batch size for database operations
+      batch-size: ${PROCESSING_BATCH_SIZE:50}
+      # Maximum queue size for pending messages
+      max-queue-size: ${PROCESSING_MAX_QUEUE_SIZE:1000}
+
+    # Queue Configuration
+    queue:
+      # Input queue name (from crawler)
+      input-queue: ${INPUT_QUEUE:crawler.raw.content.queue}
+      # Dead letter queue for failed messages
+      dead-letter-queue: ${DEAD_LETTER_QUEUE:processor.dead.letter.queue}
+      # Maximum retry attempts before sending to DLQ
+      max-retries: ${QUEUE_MAX_RETRIES:3}
+
+# Logging Configuration
+logging:
+  level:
+    root: INFO
+    com.ron.javainfohunter: DEBUG
+    org.springframework.amqp: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# Management Endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  health:
+    rabbit:
+      enabled: true
+    db:
+      enabled: true

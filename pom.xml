@@ -39,6 +39,7 @@
     <modules>
         <module>javainfohunter-ai-service</module>
         <module>javainfohunter-crawler</module>
+        <module>javainfohunter-processor</module>
     </modules>
 
     <!-- 依赖管理 -->
