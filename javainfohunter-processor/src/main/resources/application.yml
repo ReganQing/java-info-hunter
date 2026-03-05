@@ -65,8 +65,7 @@ spring:
       connection:
         mode: channel
 
-# Spring AI DashScope Configuration
-spring:
+    # Spring AI DashScope Configuration
   ai:
     dashscope:
       api-key: ${DASHSCOPE_API_KEY}

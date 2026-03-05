@@ -1,0 +1,116 @@
+spring:
+  application:
+    name: content-processor-test
+
+  # H2 In-Memory Database for Testing
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+
+  # JPA Configuration for Testing
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+
+  # Flyway - Disabled for H2 tests
+  flyway:
+    enabled: false
+
+  # RabbitMQ Test Configuration
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+    publisher-confirm-type: simple
+    publisher-returns: true
+    listener:
+      simple:
+        acknowledge-mode: auto
+        prefetch: 5
+        concurrency: 1
+        max-concurrency: 2
+    connection-timeout: 5000
+    cache:
+      channel:
+        size: 10
+      connection:
+        mode: channel
+
+    # Spring AI DashScope Configuration (can be mocked in tests)
+  ai:
+    dashscope:
+      api-key: test-api-key
+      chat:
+        options:
+          model: qwen-max
+          temperature: 0.7
+
+# Processor Module Test Configuration
+javainfohunter:
+  processor:
+    # Enable processor in tests
+    enabled: true
+
+    # Agent Configuration
+    agent:
+      max-steps: 5
+      timeout: 60
+      max-retries: 2
+      retry-backoff: 1000
+
+    # Embedding Configuration
+    embedding:
+      enabled: true
+      model: text-embedding-v3
+      batch-size: 5
+
+    # Processing Configuration
+    processing:
+      thread-pool-size: 3
+      batch-size: 10
+      max-queue-size: 100
+
+    # Queue Configuration
+    queue:
+      input-queue: test.crawler.raw.content.queue
+      dead-letter-queue: test.processor.dead.letter.queue
+      max-retries: 2
+
+# Logging Configuration for Tests
+logging:
+  level:
+    root: WARN
+    com.ron.javainfohunter: DEBUG
+    org.springframework.amqp: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    org.springframework.boot.test: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+
+# Management Endpoints for Tests
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+  health:
+    rabbit:
+      enabled: false
+    db:
+      enabled: false
