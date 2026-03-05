@@ -11,8 +11,11 @@ import com.ron.javainfohunter.crawler.dto.CrawlResult;
 import com.ron.javainfohunter.crawler.dto.RawContentMessage;
 import com.ron.javainfohunter.crawler.exception.FeedConnectionException;
 import com.ron.javainfohunter.crawler.exception.FeedParseException;
+import com.ron.javainfohunter.entity.RawContent;
+import com.ron.javainfohunter.repository.RawContentRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -27,6 +30,9 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HexFormat;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * RSS/Atom Feed Crawler Service using Rome library.
@@ -38,7 +44,7 @@ import java.util.List;
  * <p><b>Key Features:</b></p>
  * <ul>
  *   <li>Automatic format detection (RSS 0.9, 1.0, 2.0, Atom 0.3, 1.0)</li>
- *   <li>Content deduplication using SHA-256 hashing</li>
+ *   <li>Content deduplication using SHA-256 hashing against database</li>
  *   <li>Timeout handling and connection pooling</li>
  *   <li>Error handling for malformed feeds and network issues</li>
  *   <li>Metadata extraction (author, category, tags, publication date)</li>
@@ -54,9 +60,12 @@ import java.util.List;
 public class RssFeedCrawler {
 
     private final CrawlerProperties crawlerProperties;
+    private final RawContentRepository rawContentRepository;
 
-    public RssFeedCrawler(CrawlerProperties crawlerProperties) {
+    public RssFeedCrawler(CrawlerProperties crawlerProperties,
+                          RawContentRepository rawContentRepository) {
         this.crawlerProperties = crawlerProperties;
+        this.rawContentRepository = rawContentRepository;
     }
 
     /**
@@ -75,6 +84,9 @@ public class RssFeedCrawler {
         log.debug("Starting crawl for feed: {} (source ID: {})", url, rssSourceId);
 
         try {
+            // Validate URL
+            validateUrl(url);
+
             // Fetch and parse the feed
             SyndFeed feed = fetchFeed(url);
 
@@ -101,11 +113,23 @@ public class RssFeedCrawler {
             List<SyndEntry> limitedEntries = entries.subList(0, maxItems);
             log.debug("Processing {} entries (limited from {})", maxItems, entries.size());
 
-            // Convert entries to RawContentMessage
+            // Check for duplicates and collect only new content
+            Set<String> existingHashes = findExistingContentHashes(limitedEntries);
+            log.debug("Found {} existing hashes out of {} entries", existingHashes.size(), limitedEntries.size());
+
+            // Convert entries to RawContentMessage, filtering duplicates
             List<RawContentMessage> messages = new ArrayList<>();
+            int duplicateCount = 0;
             for (SyndEntry entry : limitedEntries) {
                 try {
                     String contentHash = computeContentHash(entry.getTitle(), extractContent(entry));
+
+                    // Skip if duplicate content detected
+                    if (existingHashes.contains(contentHash)) {
+                        duplicateCount++;
+                        log.trace("Skipping duplicate entry: {} (hash: {})", entry.getTitle(), contentHash);
+                        continue;
+                    }
 
                     RawContentMessage message = convertToMessage(entry, rssSourceId, feedTitle, url, contentHash);
                     messages.add(message);
@@ -117,15 +141,17 @@ public class RssFeedCrawler {
             }
 
             long duration = System.currentTimeMillis() - startTime;
-            log.info("Successfully crawled feed {}: {} items in {}ms", url, messages.size(), duration);
+            log.info("Successfully crawled feed {}: {} new, {} duplicates in {}ms",
+                    url, messages.size(), duplicateCount, duration);
 
             return CrawlResult.builder()
                     .success(true)
                     .rssSourceId(rssSourceId)
                     .rssSourceName(feedTitle)
                     .feedUrl(url)
-                    .totalItems(messages.size())
+                    .totalItems(messages.size() + duplicateCount)
                     .newItems(messages.size())
+                    .duplicateItems(duplicateCount)
                     .rawContentMessages(messages)
                     .durationMs(duration)
                     .build();
@@ -254,6 +280,40 @@ public class RssFeedCrawler {
     }
 
     /**
+     * Validate that the URL is safe to use.
+     *
+     * <p>This method checks that:</p>
+     * <ul>
+     *   <li>URL is not null or empty</li>
+     *   <li>URL uses http or https protocol only</li>
+     *   <li>URL is well-formed</li>
+     * </ul>
+     *
+     * @param url the URL to validate
+     * @throws IllegalArgumentException if URL is invalid
+     */
+    private void validateUrl(String url) {
+        if (url == null || url.trim().isEmpty()) {
+            throw new IllegalArgumentException("URL cannot be null or empty");
+        }
+
+        try {
+            URL javaUrl = new URL(url);
+            String protocol = javaUrl.getProtocol();
+
+            // Only allow http and https protocols
+            if (!"http".equalsIgnoreCase(protocol) && !"https".equalsIgnoreCase(protocol)) {
+                throw new IllegalArgumentException(
+                    "Unsupported protocol: " + protocol + ". Only http and https are allowed."
+                );
+            }
+
+        } catch (java.net.MalformedURLException e) {
+            throw new IllegalArgumentException("Invalid URL format: " + url, e);
+        }
+    }
+
+    /**
      * Compute SHA-256 hash of title + content for deduplication.
      *
      * <p>This method creates a unique hash based on the article title and content
@@ -347,5 +407,69 @@ public class RssFeedCrawler {
             return entry.getCategories().get(0).getName();
         }
         return null;
+    }
+
+    /**
+     * Find existing content hashes for the given entries.
+     *
+     * <p>This method performs bulk duplicate checking by computing hashes for all entries
+     * and querying the database for existing matches. This is more efficient than
+     * checking each entry individually.</p>
+     *
+     * @param entries the syndication entries to check
+     * @return set of existing content hashes
+     */
+    private Set<String> findExistingContentHashes(List<SyndEntry> entries) {
+        if (!crawlerProperties.getDeduplication().isEnabled()) {
+            return Set.of();
+        }
+
+        // Compute hashes for all entries first
+        Set<String> hashesToCheck = ConcurrentHashMap.newKeySet();
+        for (SyndEntry entry : entries) {
+            try {
+                String contentHash = computeContentHash(entry.getTitle(), extractContent(entry));
+                hashesToCheck.add(contentHash);
+            } catch (Exception e) {
+                log.trace("Failed to compute hash for entry: {}", entry.getTitle());
+            }
+        }
+
+        // Query database for existing hashes
+        Set<String> existingHashes = ConcurrentHashMap.newKeySet();
+        for (String hash : hashesToCheck) {
+            try {
+                Optional<RawContent> existing = rawContentRepository.findByContentHash(hash);
+                if (existing.isPresent()) {
+                    existingHashes.add(hash);
+                }
+            } catch (Exception e) {
+                log.warn("Error checking for duplicate hash {}: {}", hash, e.getMessage());
+            }
+        }
+
+        return existingHashes;
+    }
+
+    /**
+     * Check if a single content hash already exists in the database.
+     *
+     * <p>This is a convenience method for single-item duplicate checking.</p>
+     *
+     * @param contentHash the content hash to check
+     * @return true if the content hash already exists, false otherwise
+     */
+    @Transactional(readOnly = true)
+    public boolean isDuplicateContent(String contentHash) {
+        if (!crawlerProperties.getDeduplication().isEnabled()) {
+            return false;
+        }
+
+        try {
+            return rawContentRepository.findByContentHash(contentHash).isPresent();
+        } catch (Exception e) {
+            log.warn("Error checking for duplicate hash {}: {}", contentHash, e.getMessage());
+            return false;
+        }
     }
 }

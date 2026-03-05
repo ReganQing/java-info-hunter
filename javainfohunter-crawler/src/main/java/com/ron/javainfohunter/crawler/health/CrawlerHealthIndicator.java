@@ -143,7 +143,8 @@ public class CrawlerHealthIndicator implements HealthIndicator {
             configDetails.put("schedulerEnabled", crawlerProperties.getScheduler().isEnabled());
             configDetails.put("maxArticlesPerFeed", crawlerProperties.getFeed().getMaxArticlesPerFeed());
             configDetails.put("connectionTimeout", crawlerProperties.getFeed().getConnectionTimeout() + "ms");
-            configDetails.put("maxRetries", crawlerProperties.getProcessing().getMaxRetries());
+            configDetails.put("maxRetries", crawlerProperties.getRetry().getMaxAttempts());
+            configDetails.put("initialRetryDelay", crawlerProperties.getRetry().getInitialDelay() + "ms");
             details.put("configuration", configDetails);
 
             // Determine overall health

@@ -4,10 +4,13 @@ import com.ron.javainfohunter.crawler.config.RabbitMQConfig;
 import com.ron.javainfohunter.crawler.dto.RawContentMessage;
 import com.ron.javainfohunter.crawler.exception.ConfirmTimeoutException;
 import com.ron.javainfohunter.crawler.exception.PublishException;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -31,6 +34,7 @@ import java.util.concurrent.TimeoutException;
  *   <li>Correlation ID generation for message tracing</li>
  *   <li>Batch publishing support</li>
  *   <li>Error isolation - failures don't stop the publishing process</li>
+ *   <li>Scheduled cleanup of stale pending confirms</li>
  * </ul>
  *
  * <p><b>Thread Safety:</b> This class is thread-safe. RabbitTemplate is thread-safe,
@@ -44,7 +48,7 @@ import java.util.concurrent.TimeoutException;
 public class ContentPublisher {
 
     private final RabbitTemplate rabbitTemplate;
-    private final Map<String, CompletableFuture<Boolean>> pendingConfirms;
+    private final Map<String, PendingConfirm> pendingConfirms;
 
     /**
      * Maximum number of retry attempts for failed publishing.
@@ -66,6 +70,12 @@ public class ContentPublisher {
      */
     private static final long CONFIRM_TIMEOUT_MS = 5000;
 
+    /**
+     * Maximum age for pending confirms before cleanup (milliseconds).
+     * Stale confirms older than 2 minutes are removed.
+     */
+    private static final long STALE_CONFIRM_AGE_MS = 120000;
+
     @Autowired
     public ContentPublisher(RabbitTemplate rabbitTemplate) {
         this.rabbitTemplate = rabbitTemplate;
@@ -75,9 +85,9 @@ public class ContentPublisher {
         this.rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
             if (correlationData != null) {
                 String correlationId = correlationData.getId();
-                CompletableFuture<Boolean> future = pendingConfirms.remove(correlationId);
-                if (future != null) {
-                    future.complete(ack);
+                PendingConfirm pendingConfirm = pendingConfirms.remove(correlationId);
+                if (pendingConfirm != null) {
+                    pendingConfirm.getFuture().complete(ack);
                     if (!ack) {
                         log.error("Publisher confirm NACK for correlation ID: {}, cause: {}",
                             correlationId, cause);
@@ -85,6 +95,65 @@ public class ContentPublisher {
                 }
             }
         });
+    }
+
+    /**
+     * Inner class to track pending confirms with timestamp.
+     */
+    private static class PendingConfirm {
+        private final CompletableFuture<Boolean> future;
+        private final long timestamp;
+
+        public PendingConfirm(CompletableFuture<Boolean> future) {
+            this.future = future;
+            this.timestamp = System.currentTimeMillis();
+        }
+
+        public CompletableFuture<Boolean> getFuture() {
+            return future;
+        }
+
+        public long getTimestamp() {
+            return timestamp;
+        }
+    }
+
+    /**
+     * Scheduled cleanup of stale pending confirms.
+     * Runs every 5 minutes to remove confirms older than 2 minutes.
+     */
+    @Scheduled(fixedRate = 300000)
+    public void cleanupStaleConfirms() {
+        long now = System.currentTimeMillis();
+        long staleCount = 0;
+
+        for (Map.Entry<String, PendingConfirm> entry : pendingConfirms.entrySet()) {
+            PendingConfirm pendingConfirm = entry.getValue();
+            if (now - pendingConfirm.getTimestamp() > STALE_CONFIRM_AGE_MS) {
+                pendingConfirms.remove(entry.getKey());
+                // Complete the future exceptionally to notify waiting threads
+                pendingConfirm.getFuture().completeExceptionally(
+                    new ConfirmTimeoutException(UUID.fromString(entry.getKey()), STALE_CONFIRM_AGE_MS)
+                );
+                staleCount++;
+            }
+        }
+
+        if (staleCount > 0) {
+            log.warn("Cleaned up {} stale pending confirms", staleCount);
+        }
+    }
+
+    /**
+     * Cleanup method called on shutdown.
+     * Logs any remaining pending confirms.
+     */
+    @PreDestroy
+    public void shutdown() {
+        int remaining = pendingConfirms.size();
+        if (remaining > 0) {
+            log.warn("ContentPublisher shutting down with {} pending confirms", remaining);
+        }
     }
 
     /**
@@ -117,7 +186,7 @@ public class ContentPublisher {
 
                 // Create a future to wait for confirmation
                 CompletableFuture<Boolean> confirmFuture = new CompletableFuture<>();
-                pendingConfirms.put(correlationId, confirmFuture);
+                pendingConfirms.put(correlationId, new PendingConfirm(confirmFuture));
 
                 // Send the message
                 rabbitTemplate.convertAndSend(
@@ -252,14 +321,14 @@ public class ContentPublisher {
      * @throws ConfirmTimeoutException if confirmation not received within timeout
      */
     private Boolean waitForConfirms(String correlationId) {
-        CompletableFuture<Boolean> future = pendingConfirms.get(correlationId);
-        if (future == null) {
+        PendingConfirm pendingConfirm = pendingConfirms.get(correlationId);
+        if (pendingConfirm == null) {
             log.warn("No pending confirm found for correlationId: {}", correlationId);
             return false;
         }
 
         try {
-            return future.get(CONFIRM_TIMEOUT_MS, TimeUnit.MILLISECONDS);
+            return pendingConfirm.getFuture().get(CONFIRM_TIMEOUT_MS, TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
             pendingConfirms.remove(correlationId);
             throw new ConfirmTimeoutException(UUID.fromString(correlationId), CONFIRM_TIMEOUT_MS);

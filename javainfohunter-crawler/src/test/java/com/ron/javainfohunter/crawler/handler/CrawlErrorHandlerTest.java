@@ -256,7 +256,11 @@ class CrawlErrorHandlerTest {
 
         // Simulate RabbitMQ failure
         doThrow(new RuntimeException("RabbitMQ unavailable"))
-            .when(rabbitTemplate).convertAndSend(anyString(), anyString(), any());
+            .when(rabbitTemplate).convertAndSend(
+                anyString(),
+                anyString(),
+                any(Object.class)
+            );
 
         // Should not throw exception
         assertDoesNotThrow(() -> errorHandler.handleError(sourceUrl, exception, null));

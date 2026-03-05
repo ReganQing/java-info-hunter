@@ -55,6 +55,7 @@ public class RobustConsumer {
                 // basicNack(deliveryTag, multiple, requeue)
                 //   - requeue: false = 不重新入队，消息进入死信队列
                 channel.basicNack(deliveryTag, false, false);
+
                 System.err.println("❌ 业务异常，丢弃消息: " + e.getMessage());
             } catch (IOException ex) {
                 System.err.println("❌ NACK 失败: " + ex.getMessage());

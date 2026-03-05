@@ -10,6 +10,7 @@ import com.rometools.rome.feed.synd.SyndFeed;
 import com.rometools.rome.feed.synd.SyndFeedImpl;
 import com.ron.javainfohunter.crawler.config.CrawlerProperties;
 import com.ron.javainfohunter.crawler.dto.CrawlResult;
+import com.ron.javainfohunter.repository.RawContentRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,6 +21,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -39,6 +41,9 @@ class RssFeedCrawlerTest {
 
     @Mock
     private CrawlerProperties crawlerProperties;
+
+    @Mock
+    private RawContentRepository rawContentRepository;
 
     private RssFeedCrawler rssFeedCrawler;
 
@@ -61,7 +66,10 @@ class RssFeedCrawlerTest {
         when(crawlerProperties.getFeed()).thenReturn(feedProperties);
         when(crawlerProperties.getDeduplication()).thenReturn(deduplicationProperties);
 
-        rssFeedCrawler = new RssFeedCrawler(crawlerProperties);
+        // Mock repository to return empty (no duplicates)
+        when(rawContentRepository.findByContentHash(anyString())).thenReturn(Optional.empty());
+
+        rssFeedCrawler = new RssFeedCrawler(crawlerProperties, rawContentRepository);
     }
 
     @Test

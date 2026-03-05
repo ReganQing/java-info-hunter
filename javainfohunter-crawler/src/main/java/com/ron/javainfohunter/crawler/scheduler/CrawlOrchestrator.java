@@ -1,12 +1,16 @@
 package com.ron.javainfohunter.crawler.scheduler;
 
 import com.ron.javainfohunter.crawler.config.CrawlerProperties;
+import com.ron.javainfohunter.crawler.dto.CrawlResult;
 import com.ron.javainfohunter.crawler.dto.CrawlResultMessage;
 import com.ron.javainfohunter.crawler.dto.CrawlResultMessage.CrawlStatus;
+import com.ron.javainfohunter.crawler.dto.RawContentMessage;
 import com.ron.javainfohunter.crawler.publisher.CrawlResultPublisher;
-import com.ron.javainfohunter.crawler.publisher.ErrorPublisher;
+import com.ron.javainfohunter.crawler.publisher.ContentPublisher;
 import com.ron.javainfohunter.crawler.publisher.ErrorPublisher;
 import com.ron.javainfohunter.crawler.dto.CrawlErrorMessage.ErrorType;
+import com.ron.javainfohunter.crawler.service.RssFeedCrawler;
+import com.ron.javainfohunter.crawler.service.RssSourceService;
 import com.ron.javainfohunter.entity.RssSource;
 import com.ron.javainfohunter.repository.RssSourceRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -27,8 +31,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  *   <li>Fetching RSS sources due for crawling</li>
  *   <li>Executing concurrent crawl jobs using virtual threads</li>
  *   <li>Aggregating results from multiple sources</li>
- *   <li>Publishing crawl statistics</li>
+ *   <li>Publishing crawl statistics and raw content</li>
  *   <li>Handling errors at orchestration level</li>
+ *   <li>Bulk updating source metadata for efficiency</li>
  * </ul>
  *
  * <p><b>Virtual Thread Integration:</b></p>
@@ -41,28 +46,39 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @see CrawlScheduler
  * @see CrawlResultMessage
+ * @see RssFeedCrawler
+ * @see ContentPublisher
  */
 @Slf4j
 @Service
 public class CrawlOrchestrator {
 
     private final RssSourceRepository rssSourceRepository;
+    private final RssSourceService rssSourceService;
     private final CrawlerProperties crawlerProperties;
     private final CrawlResultPublisher crawlResultPublisher;
     private final ErrorPublisher errorPublisher;
+    private final RssFeedCrawler rssFeedCrawler;
+    private final ContentPublisher contentPublisher;
     private final ExecutorService crawlExecutor;
 
     @Autowired
     public CrawlOrchestrator(
             RssSourceRepository rssSourceRepository,
+            RssSourceService rssSourceService,
             CrawlerProperties crawlerProperties,
             CrawlResultPublisher crawlResultPublisher,
             ErrorPublisher errorPublisher,
+            RssFeedCrawler rssFeedCrawler,
+            ContentPublisher contentPublisher,
             @Qualifier("crawlExecutor") ExecutorService crawlExecutor) {
         this.rssSourceRepository = rssSourceRepository;
+        this.rssSourceService = rssSourceService;
         this.crawlerProperties = crawlerProperties;
         this.crawlResultPublisher = crawlResultPublisher;
         this.errorPublisher = errorPublisher;
+        this.rssFeedCrawler = rssFeedCrawler;
+        this.contentPublisher = contentPublisher;
         this.crawlExecutor = crawlExecutor;
     }
 
@@ -91,10 +107,13 @@ public class CrawlOrchestrator {
         Instant startTime = Instant.now();
         CrawlResultBuilder resultBuilder = new CrawlResultBuilder();
 
+        // Track source IDs for bulk update
+        List<Long> successfullyCrawledSourceIds = new CopyOnWriteArrayList<>();
+
         // Create a list of futures for concurrent execution
         List<CompletableFuture<Void>> futures = sources.stream()
                 .map(source -> CompletableFuture.runAsync(
-                        () -> processSingleSource(source, resultBuilder),
+                        () -> processSingleSource(source, resultBuilder, successfullyCrawledSourceIds),
                         crawlExecutor
                 ))
                 .toList();
@@ -113,6 +132,16 @@ public class CrawlOrchestrator {
         } catch (ExecutionException e) {
             log.error("Error during crawl job execution", e);
             resultBuilder.addError("Execution error: " + e.getCause().getMessage());
+        }
+
+        // Bulk update last crawled timestamps for efficiency
+        if (!successfullyCrawledSourceIds.isEmpty()) {
+            try {
+                rssSourceService.bulkUpdateLastCrawled(successfullyCrawledSourceIds);
+                log.debug("Bulk updated last_crawled_at for {} sources", successfullyCrawledSourceIds.size());
+            } catch (Exception e) {
+                log.error("Failed to bulk update last_crawled_at timestamps", e);
+            }
         }
 
         // Build the final result
@@ -149,7 +178,8 @@ public class CrawlOrchestrator {
      * @param source The RSS source to process
      * @param resultBuilder Builder for aggregating results
      */
-    private void processSingleSource(RssSource source, CrawlResultBuilder resultBuilder) {
+    private void processSingleSource(RssSource source, CrawlResultBuilder resultBuilder,
+                                      List<Long> successfullyCrawledSourceIds) {
         log.debug("Processing source: {} ({})", source.getName(), source.getUrl());
 
         Instant sourceStartTime = Instant.now();
@@ -158,37 +188,71 @@ public class CrawlOrchestrator {
         int failedArticles = 0;
 
         try {
-            // TODO: Implement actual RSS feed crawling
-            // This is a placeholder that simulates crawling
-            // The actual implementation will be provided by Agent-2
+            // Use RssFeedCrawler to fetch and parse the RSS feed
+            CrawlResult crawlResult = rssFeedCrawler.crawlFeed(source.getUrl(), source.getId());
 
-            // Simulate crawling delay
-            Thread.sleep(100);
+            if (crawlResult.isSuccess()) {
+                // Publish raw content messages to RabbitMQ
+                List<RawContentMessage> messages = crawlResult.getRawContentMessages();
+                if (messages != null && !messages.isEmpty()) {
+                    for (RawContentMessage message : messages) {
+                        try {
+                            contentPublisher.publishRawContent(message);
+                            newArticles++;
+                        } catch (Exception e) {
+                            log.warn("Failed to publish message: {}", message.getGuid(), e);
+                            failedArticles++;
+                        }
+                    }
+                }
 
-            // Simulate finding some articles
-            newArticles = (int) (Math.random() * 10);
-            duplicateArticles = (int) (Math.random() * 5);
+                duplicateArticles = crawlResult.getDuplicateItems();
+                log.debug("Source {} completed: {} new, {} duplicates published",
+                        source.getName(), newArticles, duplicateArticles);
 
-            log.debug("Source {} completed: {} new, {} duplicates",
-                    source.getName(), newArticles, duplicateArticles);
+                // Add to bulk update list (timestamp will be updated in bulk)
+                successfullyCrawledSourceIds.add(source.getId());
 
-            // Update source statistics
-            source.updateLastCrawled();
-            source.incrementArticleCount();
-            rssSourceRepository.save(source);
+            } else {
+                log.warn("Source {} crawl failed: {}",
+                        source.getName(), crawlResult.getErrorMessage());
+                failedArticles++;
 
-        } catch (Exception e) {
+                // Publish error message based on error type
+                Throwable throwable = crawlResult.getException();
+                ErrorType errorType = determineErrorType(throwable);
+
+                // Convert Throwable to Exception for publishError
+                Exception exception = throwable instanceof Exception
+                    ? (Exception) throwable
+                    : new Exception(throwable.getMessage(), throwable);
+
+                errorPublisher.publishError(
+                        source.getId(),
+                        source.getName(),
+                        source.getUrl(),
+                        exception,
+                        errorType
+                );
+            }
+
+        } catch (Throwable e) {
             log.error("Failed to process source: {} ({})", source.getName(), source.getUrl(), e);
-            failedArticles = 1;
+            failedArticles++;
+
+            // Convert Throwable to Exception for publishError
+            Exception exception = e instanceof Exception
+                ? (Exception) e
+                : new Exception(e.getMessage(), e);
 
             // Publish error message
             errorPublisher.publishError(
                     source.getId(),
                     source.getName(),
                     source.getUrl(),
-                    e,
+                    exception,
                     ErrorType.CONNECTION_ERROR
-            );
+                );
         }
 
         // Add to result builder
@@ -201,6 +265,45 @@ public class CrawlOrchestrator {
                 failedArticles,
                 sourceStartTime
         );
+    }
+
+    /**
+     * Determine error type from exception.
+     *
+     * @param e the exception
+     * @return the error type
+     */
+    private ErrorType determineErrorType(Throwable e) {
+        if (e == null) {
+            return ErrorType.UNKNOWN;
+        }
+
+        Throwable cause = e;
+        int depth = 0;
+        while (cause != null && depth < 5) {
+            if (cause instanceof java.io.IOException) {
+                if (cause instanceof java.net.SocketTimeoutException ||
+                    cause instanceof java.util.concurrent.TimeoutException) {
+                    return ErrorType.CONNECTION_ERROR;
+                }
+                if (cause.getMessage() != null &&
+                    (cause.getMessage().contains("Connection refused") ||
+                     cause.getMessage().contains("Connection reset") ||
+                     cause.getMessage().contains("No route to host"))) {
+                    return ErrorType.CONNECTION_ERROR;
+                }
+            }
+
+            if (cause instanceof com.rometools.rome.io.FeedException ||
+                cause instanceof com.rometools.rome.io.XmlReaderException) {
+                return ErrorType.PARSE_ERROR;
+            }
+
+            cause = cause.getCause();
+            depth++;
+        }
+
+        return ErrorType.UNKNOWN;
     }
 
     /**

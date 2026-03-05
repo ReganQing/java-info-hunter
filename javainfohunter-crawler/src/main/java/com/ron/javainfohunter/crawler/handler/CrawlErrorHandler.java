@@ -78,7 +78,7 @@ public class CrawlErrorHandler {
      *
      * @param sourceUrl the RSS source URL that caused the error
      * @param e the exception that occurred
-     * @param context additional context information (optional)
+     * @param context additional context information (optional), should include "durationMs" if available
      */
     public void handleError(String sourceUrl, Exception e, Map<String, Object> context) {
         ErrorType errorType = classifyError(e);
@@ -93,6 +93,15 @@ public class CrawlErrorHandler {
         int retryAttempt = context != null ? (int) context.getOrDefault("retryAttempt", 0) : 0;
         int maxRetries = crawlerProperties.getRetry().getMaxAttempts();
 
+        // Extract duration from context if available
+        long durationMs = 0;
+        if (context != null) {
+            Object durationObj = context.get("durationMs");
+            if (durationObj instanceof Number) {
+                durationMs = ((Number) durationObj).longValue();
+            }
+        }
+
         // Log the error
         logError(sourceUrl, errorType, e, retryAttempt);
 
@@ -104,8 +113,8 @@ public class CrawlErrorHandler {
         // Publish to error queue
         publishError(errorMessage);
 
-        // Record in metrics
-        metricsCollector.recordCrawlFailure(sourceUrl, errorType, 0);
+        // Record in metrics with actual duration
+        metricsCollector.recordCrawlFailure(sourceUrl, errorType, durationMs);
     }
 
     /**
