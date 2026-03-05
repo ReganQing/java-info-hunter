@@ -1,5 +1,6 @@
 package com.ron.javainfohunter.crawler.publisher;
 
+import com.ron.javainfohunter.crawler.config.CrawlerProperties;
 import com.ron.javainfohunter.crawler.dto.RawContentMessage;
 import com.ron.javainfohunter.crawler.exception.PublishException;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,11 +30,21 @@ class ContentPublisherTest {
     @Mock
     private RabbitTemplate rabbitTemplate;
 
+    @Mock
+    private CrawlerProperties crawlerProperties;
+
     private ContentPublisher contentPublisher;
 
     @BeforeEach
     void setUp() {
-        contentPublisher = new ContentPublisher(rabbitTemplate);
+        // Set up default crawler properties
+        CrawlerProperties.Publisher publisher = new CrawlerProperties.Publisher();
+        publisher.setCleanupIntervalMs(300000);
+        publisher.setStaleConfirmAgeMs(120000);
+
+        when(crawlerProperties.getPublisher()).thenReturn(publisher);
+
+        contentPublisher = new ContentPublisher(rabbitTemplate, crawlerProperties);
     }
 
     @Test

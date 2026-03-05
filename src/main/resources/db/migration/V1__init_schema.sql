@@ -118,6 +118,43 @@ CREATE INDEX idx_raw_content_rss_source ON raw_content(rss_source_id);
 CREATE INDEX idx_raw_content_status ON raw_content(processing_status);
 CREATE INDEX idx_raw_content_publish_date ON raw_content(publish_date DESC);
 CREATE INDEX idx_raw_content_crawl_date ON raw_content(crawl_date DESC);
+
+-- ============================================================================
+-- IVFFlat Vector Index for Similarity Search
+-- ============================================================================
+-- The ivfflat index uses inverted file indexing for approximate nearest neighbor search.
+--
+-- IMPORTANT: The 'lists' parameter affects index performance and accuracy:
+--
+--  - Optimal value: approximately sqrt(number of rows)
+--  - lists = 100 is reasonable for small datasets (< 100K rows)
+--  - For larger datasets, recalculate: lists = sqrt(rows)
+--
+-- Dataset size recommendations:
+--  - 10K rows    -> lists = 100
+--  - 100K rows   -> lists = 316 (use 300-350)
+--  - 1M rows     -> lists = 1000
+--  - 10M rows    -> lists = 3162 (use 3000-3500)
+--
+-- Trade-offs:
+--  - Lower lists: faster index build, slower queries
+--  - Higher lists: slower index build, faster queries (but diminishing returns)
+--
+-- To recreate the index for production with different lists value:
+--
+--   -- For ~1M rows:
+--   DROP INDEX IF EXISTS idx_raw_content_embedding;
+--   CREATE INDEX idx_raw_content_embedding ON raw_content
+--   USING ivfflat(embedding vector_cosine_ops) WITH (lists = 1000);
+--
+--   -- For ~10M rows:
+--   DROP INDEX IF EXISTS idx_raw_content_embedding;
+--   CREATE INDEX idx_raw_content_embedding ON raw_content
+--   USING ivfflat(embedding vector_cosine_ops) WITH (lists = 3000);
+--
+-- Note: IVFFlat indexes require a minimum number of rows to be effective.
+-- For very small datasets (< 1000 rows), consider using exact search instead.
+-- ============================================================================
 CREATE INDEX idx_raw_content_embedding ON raw_content USING ivfflat(embedding vector_cosine_ops) WITH (lists = 100);
 
 -- Comments

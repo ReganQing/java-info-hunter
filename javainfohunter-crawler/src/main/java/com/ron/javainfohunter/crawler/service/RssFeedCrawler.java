@@ -15,7 +15,6 @@ import com.ron.javainfohunter.entity.RawContent;
 import com.ron.javainfohunter.repository.RawContentRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
@@ -413,8 +412,9 @@ public class RssFeedCrawler {
      * Find existing content hashes for the given entries.
      *
      * <p>This method performs bulk duplicate checking by computing hashes for all entries
-     * and querying the database for existing matches. This is more efficient than
-     * checking each entry individually.</p>
+     * and querying the database for existing matches using a single batch query.
+     * This fixes the N+1 query problem by using {@code findExistingContentHashes()}
+     * which uses an IN clause instead of individual queries.</p>
      *
      * @param entries the syndication entries to check
      * @return set of existing content hashes
@@ -435,31 +435,34 @@ public class RssFeedCrawler {
             }
         }
 
-        // Query database for existing hashes
-        Set<String> existingHashes = ConcurrentHashMap.newKeySet();
-        for (String hash : hashesToCheck) {
-            try {
-                Optional<RawContent> existing = rawContentRepository.findByContentHash(hash);
-                if (existing.isPresent()) {
-                    existingHashes.add(hash);
-                }
-            } catch (Exception e) {
-                log.warn("Error checking for duplicate hash {}: {}", hash, e.getMessage());
-            }
+        // Single batch query using IN clause (N+1 fix)
+        if (hashesToCheck.isEmpty()) {
+            return Set.of();
         }
 
-        return existingHashes;
+        try {
+            Set<String> existingHashes = rawContentRepository.findExistingContentHashes(hashesToCheck);
+            // Return thread-safe set
+            Set<String> threadSafeSet = ConcurrentHashMap.newKeySet();
+            threadSafeSet.addAll(existingHashes);
+            return threadSafeSet;
+        } catch (Exception e) {
+            log.warn("Error checking for duplicate hashes: {}", e.getMessage());
+            return Set.of();
+        }
     }
 
     /**
      * Check if a single content hash already exists in the database.
      *
-     * <p>This is a convenience method for single-item duplicate checking.</p>
+     * <p>This is a convenience method for single-item duplicate checking.
+     * Note: The @Transactional annotation is intentionally omitted from this
+     * public method as it doesn't work reliably without proper proxy configuration.
+     * The repository method handles its own transaction.</p>
      *
      * @param contentHash the content hash to check
      * @return true if the content hash already exists, false otherwise
      */
-    @Transactional(readOnly = true)
     public boolean isDuplicateContent(String contentHash) {
         if (!crawlerProperties.getDeduplication().isEnabled()) {
             return false;

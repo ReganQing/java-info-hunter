@@ -9,8 +9,10 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Repository for Raw Content entities
@@ -64,6 +66,19 @@ public interface RawContentRepository extends JpaRepository<RawContent, Long> {
      * @return Optional containing the raw content if found
      */
     Optional<RawContent> findByContentHash(String contentHash);
+
+    /**
+     * Find existing content hashes in batch (N+1 query fix).
+     *
+     * <p>This method performs a single batch query using an IN clause to check
+     * multiple content hashes at once, significantly improving performance over
+     * individual queries in a loop.</p>
+     *
+     * @param hashes Collection of content hashes to check
+     * @return Set of content hashes that already exist in the database
+     */
+    @Query("SELECT rc.contentHash FROM RawContent rc WHERE rc.contentHash IN :hashes")
+    Set<String> findExistingContentHashes(@Param("hashes") Collection<String> hashes);
 
     /**
      * Find raw content by GUID and RSS source ID

@@ -31,6 +31,9 @@ import org.springframework.stereotype.Component;
  *     deduplication:
  *       enabled: true
  *       hash-algorithm: "SHA-256"
+ *     publisher:
+ *       cleanup-interval-ms: 300000  # 5 minutes - cleanup interval for stale confirms
+ *       stale-confirm-age-ms: 120000 # 2 minutes - age before a confirm is considered stale
  * </pre>
  *
  * @see org.springframework.boot.context.properties.ConfigurationProperties
@@ -69,6 +72,11 @@ public class CrawlerProperties {
      * Deduplication configuration.
      */
     private Deduplication deduplication = new Deduplication();
+
+    /**
+     * Publisher configuration for message publishing.
+     */
+    private Publisher publisher = new Publisher();
 
     /**
      * Scheduler configuration properties.
@@ -195,6 +203,27 @@ public class CrawlerProperties {
          * Supported: SHA-256, SHA-512, MD5
          */
         private String hashAlgorithm = "SHA-256";
+    }
+
+    /**
+     * Publisher configuration properties.
+     */
+    @Data
+    public static class Publisher {
+        /**
+         * Cleanup interval for stale pending confirms (milliseconds).
+         * <p>This controls how often the publisher checks for and removes
+         * stale pending confirms that haven't received broker confirmation.</p>
+         * <p>Default: 300000ms (5 minutes)</p>
+         */
+        private long cleanupIntervalMs = 300000;
+
+        /**
+         * Maximum age for pending confirms before cleanup (milliseconds).
+         * <p>Stale confirms older than this duration are removed during cleanup.</p>
+         * <p>Default: 120000ms (2 minutes)</p>
+         */
+        private long staleConfirmAgeMs = 120000;
     }
 
 }

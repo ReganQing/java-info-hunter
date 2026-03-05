@@ -20,8 +20,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -68,6 +70,7 @@ class RssFeedCrawlerTest {
 
         // Mock repository to return empty (no duplicates)
         when(rawContentRepository.findByContentHash(anyString())).thenReturn(Optional.empty());
+        when(rawContentRepository.findExistingContentHashes(anyCollection())).thenReturn(Set.of());
 
         rssFeedCrawler = new RssFeedCrawler(crawlerProperties, rawContentRepository);
     }

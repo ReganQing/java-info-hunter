@@ -53,6 +53,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Service
 public class CrawlOrchestrator {
 
+    private static final int MAX_CAUSE_DEPTH = 5;
+
     private final RssSourceRepository rssSourceRepository;
     private final RssSourceService rssSourceService;
     private final CrawlerProperties crawlerProperties;
@@ -194,6 +196,7 @@ public class CrawlOrchestrator {
             if (crawlResult.isSuccess()) {
                 // Publish raw content messages to RabbitMQ
                 List<RawContentMessage> messages = crawlResult.getRawContentMessages();
+                boolean allPublishingSucceeded = true;
                 if (messages != null && !messages.isEmpty()) {
                     for (RawContentMessage message : messages) {
                         try {
@@ -202,6 +205,7 @@ public class CrawlOrchestrator {
                         } catch (Exception e) {
                             log.warn("Failed to publish message: {}", message.getGuid(), e);
                             failedArticles++;
+                            allPublishingSucceeded = false;
                         }
                     }
                 }
@@ -210,8 +214,10 @@ public class CrawlOrchestrator {
                 log.debug("Source {} completed: {} new, {} duplicates published",
                         source.getName(), newArticles, duplicateArticles);
 
-                // Add to bulk update list (timestamp will be updated in bulk)
-                successfullyCrawledSourceIds.add(source.getId());
+                // Only add to bulk update list if all messages were published successfully
+                if (allPublishingSucceeded) {
+                    successfullyCrawledSourceIds.add(source.getId());
+                }
 
             } else {
                 log.warn("Source {} crawl failed: {}",
@@ -280,7 +286,7 @@ public class CrawlOrchestrator {
 
         Throwable cause = e;
         int depth = 0;
-        while (cause != null && depth < 5) {
+        while (cause != null && depth < MAX_CAUSE_DEPTH) {
             if (cause instanceof java.io.IOException) {
                 if (cause instanceof java.net.SocketTimeoutException ||
                     cause instanceof java.util.concurrent.TimeoutException) {

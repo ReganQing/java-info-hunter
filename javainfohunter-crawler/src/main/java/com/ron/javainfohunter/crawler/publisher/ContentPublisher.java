@@ -1,5 +1,6 @@
 package com.ron.javainfohunter.crawler.publisher;
 
+import com.ron.javainfohunter.crawler.config.CrawlerProperties;
 import com.ron.javainfohunter.crawler.config.RabbitMQConfig;
 import com.ron.javainfohunter.crawler.dto.RawContentMessage;
 import com.ron.javainfohunter.crawler.exception.ConfirmTimeoutException;
@@ -40,14 +41,21 @@ import java.util.concurrent.TimeoutException;
  * <p><b>Thread Safety:</b> This class is thread-safe. RabbitTemplate is thread-safe,
  * and confirm tracking uses ConcurrentHashMap for concurrent access.</p>
  *
+ * <p><b>Scheduling Requirement:</b> The {@code @Scheduled} annotation used in this class
+ * requires {@link org.springframework.scheduling.annotation.EnableScheduling @EnableScheduling}
+ * to be present in a Spring configuration class. In this application, it is enabled
+ * in {@link com.ron.javainfohunter.crawler.config.SchedulerConfiguration}.</p>
+ *
  * @see RawContentMessage
  * @see PublishResult
+ * @see org.springframework.scheduling.annotation.EnableScheduling
  */
 @Slf4j
 @Service
 public class ContentPublisher {
 
     private final RabbitTemplate rabbitTemplate;
+    private final CrawlerProperties crawlerProperties;
     private final Map<String, PendingConfirm> pendingConfirms;
 
     /**
@@ -70,15 +78,10 @@ public class ContentPublisher {
      */
     private static final long CONFIRM_TIMEOUT_MS = 5000;
 
-    /**
-     * Maximum age for pending confirms before cleanup (milliseconds).
-     * Stale confirms older than 2 minutes are removed.
-     */
-    private static final long STALE_CONFIRM_AGE_MS = 120000;
-
     @Autowired
-    public ContentPublisher(RabbitTemplate rabbitTemplate) {
+    public ContentPublisher(RabbitTemplate rabbitTemplate, CrawlerProperties crawlerProperties) {
         this.rabbitTemplate = rabbitTemplate;
+        this.crawlerProperties = crawlerProperties;
         this.pendingConfirms = new ConcurrentHashMap<>();
 
         // Set up confirm callback to complete futures
@@ -120,27 +123,36 @@ public class ContentPublisher {
 
     /**
      * Scheduled cleanup of stale pending confirms.
-     * Runs every 5 minutes to remove confirms older than 2 minutes.
+     * Runs at a configurable interval (default: 5 minutes) to remove confirms older than
+     * the configured stale age (default: 2 minutes).
+     *
+     * <p>The cleanup interval is configured via {@code javainfohunter.crawler.publisher.cleanup-interval-ms}.
+     * The stale confirm age is configured via {@code javainfohunter.crawler.publisher.stale-confirm-age-ms}.</p>
+     *
+     * @see CrawlerProperties.Publisher#getCleanupIntervalMs()
+     * @see CrawlerProperties.Publisher#getStaleConfirmAgeMs()
      */
-    @Scheduled(fixedRate = 300000)
+    @Scheduled(fixedRateString = "${javainfohunter.crawler.publisher.cleanup-interval-ms:300000}")
     public void cleanupStaleConfirms() {
         long now = System.currentTimeMillis();
         long staleCount = 0;
+        long staleConfirmAgeMs = crawlerProperties.getPublisher().getStaleConfirmAgeMs();
 
         for (Map.Entry<String, PendingConfirm> entry : pendingConfirms.entrySet()) {
             PendingConfirm pendingConfirm = entry.getValue();
-            if (now - pendingConfirm.getTimestamp() > STALE_CONFIRM_AGE_MS) {
+            if (now - pendingConfirm.getTimestamp() > staleConfirmAgeMs) {
                 pendingConfirms.remove(entry.getKey());
                 // Complete the future exceptionally to notify waiting threads
                 pendingConfirm.getFuture().completeExceptionally(
-                    new ConfirmTimeoutException(UUID.fromString(entry.getKey()), STALE_CONFIRM_AGE_MS)
+                    new ConfirmTimeoutException(UUID.fromString(entry.getKey()), staleConfirmAgeMs)
                 );
                 staleCount++;
             }
         }
 
         if (staleCount > 0) {
-            log.warn("Cleaned up {} stale pending confirms", staleCount);
+            log.warn("Cleaned up {} stale pending confirms (older than {}ms)",
+                staleCount, staleConfirmAgeMs);
         }
     }
 
