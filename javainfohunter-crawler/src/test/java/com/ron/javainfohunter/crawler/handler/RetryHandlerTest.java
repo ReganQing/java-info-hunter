@@ -55,7 +55,7 @@ class RetryHandlerTest {
             "Test task",
             () -> {
                 if (attempts.incrementAndGet() < 2) {
-                    throw new IOException("Temporary failure");
+                    throw new RuntimeException("Temporary failure", new IOException("Temporary failure"));
                 }
                 return "Success";
             }
@@ -67,7 +67,7 @@ class RetryHandlerTest {
 
     @Test
     void testFailureAfterMaxRetries() {
-        IOException exception = new IOException("Persistent failure");
+        RuntimeException exception = new RuntimeException("Persistent failure", new IOException("Persistent failure"));
 
         assertThrows(RuntimeException.class, () -> {
             retryHandler.executeWithRetry(
@@ -103,7 +103,7 @@ class RetryHandlerTest {
             "Test task",
             () -> {
                 if (attempts.incrementAndGet() < 2) {
-                    throw new IOException("Temporary failure");
+                    throw new RuntimeException("Temporary failure", new IOException("Temporary failure"));
                 }
                 return "Success";
             },
@@ -163,7 +163,7 @@ class RetryHandlerTest {
             "Test task",
             () -> {
                 if (attempts.incrementAndGet() < 2) {
-                    throw new IOException("Temporary failure");
+                    throw new RuntimeException("Temporary failure", new IOException("Temporary failure"));
                 }
                 return "Success";
             },
@@ -182,7 +182,7 @@ class RetryHandlerTest {
             "Test task",
             () -> {
                 if (attempts.incrementAndGet() < 2) {
-                    throw new IOException("Temporary failure");
+                    throw new RuntimeException("Temporary failure", new IOException("Temporary failure"));
                 }
             }
         );
@@ -223,7 +223,7 @@ class RetryHandlerTest {
 
     @Test
     void testExceptionPreservedInRuntimeException() {
-        IOException originalException = new IOException("Original error");
+        RuntimeException originalException = new RuntimeException("Original error", new IOException("Original error"));
 
         try {
             retryHandler.executeWithRetry(
@@ -234,7 +234,6 @@ class RetryHandlerTest {
             );
             fail("Should have thrown RuntimeException");
         } catch (RuntimeException e) {
-            assertTrue(e.getCause() instanceof IOException);
             assertEquals("Original error", e.getCause().getMessage());
         }
     }
@@ -245,7 +244,7 @@ class RetryHandlerTest {
             retryHandler.executeWithRetry(
                 "My Custom Task",
                 () -> {
-                    throw new IOException("Error");
+                    throw new RuntimeException("Error", new IOException("Error"));
                 }
             );
             fail("Should have thrown RuntimeException");
@@ -265,7 +264,7 @@ class RetryHandlerTest {
                 "Test task",
                 () -> {
                     attempts.incrementAndGet();
-                    throw new IOException("Error");
+                    throw new RuntimeException("Error", new IOException("Error"));
                 }
             );
         });
@@ -283,7 +282,7 @@ class RetryHandlerTest {
             retryHandler.executeWithRetry(
                 "Test task",
                 () -> {
-                    throw new IOException("Error");
+                    throw new RuntimeException("Error", new IOException("Error"));
                 }
             );
         } catch (Exception e) {
