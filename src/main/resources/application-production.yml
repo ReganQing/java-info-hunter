@@ -1,6 +1,0 @@
-spring:
-  threads:
-    virtual:
-      enabled: true
-  application:
-    name: java-info-hunter
