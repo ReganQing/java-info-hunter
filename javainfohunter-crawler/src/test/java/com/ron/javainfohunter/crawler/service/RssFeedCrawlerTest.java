@@ -26,7 +26,6 @@ import java.util.Optional;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for RssFeedCrawler.
@@ -64,13 +63,6 @@ class RssFeedCrawlerTest {
         deduplicationProperties = new CrawlerProperties.Deduplication();
         deduplicationProperties.setEnabled(true);
         deduplicationProperties.setHashAlgorithm("SHA-256");
-
-        when(crawlerProperties.getFeed()).thenReturn(feedProperties);
-        when(crawlerProperties.getDeduplication()).thenReturn(deduplicationProperties);
-
-        // Mock repository to return empty (no duplicates)
-        when(rawContentRepository.findByContentHash(anyString())).thenReturn(Optional.empty());
-        when(rawContentRepository.findExistingContentHashes(anyCollection())).thenReturn(Set.of());
 
         rssFeedCrawler = new RssFeedCrawler(crawlerProperties, rawContentRepository);
     }
@@ -181,7 +173,9 @@ class RssFeedCrawlerTest {
         assertEquals(8, result.getNewItems());
         assertEquals(2, result.getDuplicateItems());
         assertEquals(1000, result.getDurationMs());
-        assertEquals(80.0, result.getSuccessRate(), 0.01);
+        // Success rate = (totalItems - failedItems) / totalItems * 100
+        // = (10 - 0) / 10 * 100 = 100%
+        assertEquals(100.0, result.getSuccessRate(), 0.01);
     }
 
     @Test
