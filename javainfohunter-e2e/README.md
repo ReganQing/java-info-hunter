@@ -204,4 +204,59 @@ Port 5432 already in use
 
 ---
 
-**Summary**: Phase 1 (Infrastructure) and Phase 2 (Test Writing) are complete. We're now in the TDD RED phase with tests written and failing as expected. Next steps are to implement the minimum code to make these tests pass (GREEN phase).
+## CI/CD Integration
+
+### GitHub Actions Workflows
+
+The E2E test module is integrated with GitHub Actions for automated testing:
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| **ci.yml** | All pushes/PRs | Build, unit tests, quality checks |
+| **e2e-tests.yml** | Push to main/develop | Full E2E test suite |
+| **coverage.yml** | Push to main/develop | Coverage reporting (80% target) |
+| **performance.yml** | Daily at 2 AM UTC | Performance regression detection |
+
+### CI/CD Quick Links
+
+- **[CI/CD Setup Guide](../docs/ci-cd-setup.md)** - Complete CI/CD documentation
+- **[Performance Baseline](./performance-baseline.md)** - Performance targets and trends
+- **[Test Execution Guide](./test-execution-guide.md)** - How to run tests locally
+
+### Local Testing with Docker Compose
+
+```bash
+# Start all test services
+docker-compose -f docker-compose.test.yml up -d
+
+# Run E2E tests
+./mvnw test -pl javainfohunter-e2e -Dtestcontainers.enable=false
+
+# Cleanup
+docker-compose -f docker-compose.test.yml down -v
+```
+
+### Test Services (Docker Compose)
+
+| Service | Port | Usage |
+|---------|------|-------|
+| PostgreSQL | 5432 | Database for tests |
+| RabbitMQ | 5672, 15672 | Message queue (15672 = UI) |
+| Redis | 6379 | Cache for tests |
+| MinIO | 9000, 9001 | S3-compatible storage (optional) |
+| Prometheus | 9090 | Metrics monitoring (optional) |
+| Grafana | 3000 | Metrics visualization (optional) |
+
+### Status Matrix
+
+| Component | Status | Coverage |
+|-----------|--------|----------|
+| Integration Tests | ✅ Complete | TBD |
+| E2E Tests | ✅ Written | TBD |
+| Performance Tests | ✅ Written | TBD |
+| CI/CD Pipelines | ✅ Configured | TBD |
+| Coverage Gates | ✅ 80% target | TBD |
+
+---
+
+**Summary**: Phase 1 (Infrastructure) and Phase 2 (Test Writing) are complete. We're now in the TDD RED phase with tests written and failing as expected. CI/CD workflows have been configured for automated testing. Next steps are to implement the minimum code to make these tests pass (GREEN phase).

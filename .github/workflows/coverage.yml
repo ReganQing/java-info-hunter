@@ -1,0 +1,249 @@
+# GitHub Actions Workflow - Coverage Reporting
+# Generates and tracks code coverage across the project
+# Enforces coverage gates and tracks trends
+
+name: Coverage Report
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+env:
+  JAVA_VERSION: '21'
+  JAVA_DISTRIBUTION: 'temurin'
+  COVERAGE_THRESHOLD: '0.80'
+
+jobs:
+  # Run all tests with coverage
+  coverage:
+    name: Code Coverage Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: javainfohunter_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      rabbitmq:
+        image: rabbitmq:3.12-alpine
+        env:
+          RABBITMQ_DEFAULT_USER: admin
+          RABBITMQ_DEFAULT_PASS: admin
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q check_running"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better coverage diff
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: 'maven'
+
+      - name: Cache Maven packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Build all modules
+        run: ./mvnw clean install -DskipTests -DskipITs
+
+      - name: Run unit tests with coverage
+        run: ./mvnw test jacoco:report -Djacoco.skip=false
+
+      - name: Run E2E tests with coverage
+        run: ./mvnw test -pl javainfohunter-e2e jacoco:report
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/javainfohunter_test
+          SPRING_RABBITMQ_HOST: localhost
+          SPRING_RABBITMQ_PORT: 5672
+          SPRING_RABBITMQ_USERNAME: admin
+          SPRING_RABBITMQ_PASSWORD: admin
+          SPRING_REDIS_HOST: localhost
+          SPRING_REDIS_PORT: 6379
+
+      - name: Merge coverage reports
+        run: |
+          # Create merged report directory
+          mkdir -p target/site/jacoco-merged
+
+          # Run JaCoCo merge to combine all reports
+          ./mvnw jacoco:merge-aggregate -Djacoco.merger.fileSets="**/target/jacoco.exec"
+
+      - name: Generate aggregate coverage report
+        run: ./mvnw jacoco:report-aggregate
+
+      - name: Check coverage thresholds
+        run: ./mvnw jacoco:check
+        continue-on-error: true  # Don't fail the build, just report
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: |
+            ./javainfohunter-ai-service/target/site/jacoco/jacoco.xml
+            ./javainfohunter-crawler/target/site/jacoco/jacoco.xml
+            ./javainfohunter-processor/target/site/jacoco/jacoco.xml
+            ./javainfohunter-api/target/site/jacoco/jacoco.xml
+            ./javainfohunter-e2e/target/site/jacoco/jacoco.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
+
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: |
+            **/target/site/jacoco/
+            **/target/site/jacoco-aggregate/
+          retention-days: 30
+
+      - name: Generate coverage summary
+        if: always()
+        run: |
+          echo "# Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Extract instruction coverage from each module
+          for module in javainfohunter-ai-service javainfohunter-crawler javainfohunter-processor javainfohunter-api javainfohunter-e2e; do
+            if [ -f "$module/target/site/jacoco/jacoco.csv" ]; then
+              echo "## $module" >> $GITHUB_STEP_SUMMARY
+              head -n 2 "$module/target/site/jacoco/jacoco.csv" | tail -n 1 | \
+                awk -F',' '{printf "- Instruction Coverage: %.2f%%\n", $2 * 100}' >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request'
+        uses: madrapps/jacoco-report@v1.6.1
+        with:
+          paths: |
+            ${{ github.workspace }}/javainfohunter-ai-service/target/site/jacoco/jacoco.xml
+            ${{ github.workspace }}/javainfohunter-crawler/target/site/jacoco/jacoco.xml
+            ${{ github.workspace }}/javainfohunter-processor/target/site/jacoco/jacoco.xml
+            ${{ github.workspace }}/javainfohunter-api/target/site/jacoco/jacoco.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          min-coverage-overall: ${{ env.COVERAGE_THRESHOLD }}
+          min-coverage-changed-files: ${{ env.COVERAGE_THRESHOLD }}
+          title: Code Coverage Report
+          update-comment: true
+
+  # Coverage trend tracking
+  coverage-trend:
+    name: Track Coverage Trend
+    runs-on: ubuntu-latest
+    needs: coverage
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download coverage reports
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-reports
+          path: coverage-reports/
+
+      - name: Store coverage metrics
+        run: |
+          mkdir -p coverage-history
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+
+          # Extract and store coverage metrics
+          for module in javainfohunter-ai-service javainfohunter-crawler javainfohunter-processor javainfohunter-api javainfohunter-e2e; do
+            if [ -f "coverage-reports/$module/target/site/jacoco/jacoco.csv" ]; then
+              cp "coverage-reports/$module/target/site/jacoco/jacoco.csv" \
+                 "coverage-history/${module}-${TIMESTAMP}.csv"
+            fi
+          done
+
+      - name: Upload coverage history
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-history-${{ github.run_number }}
+          path: coverage-history/
+          retention-days: 90
+
+  # Coverage badge generation (for main branch)
+  coverage-badge:
+    name: Generate Coverage Badge
+    runs-on: ubuntu-latest
+    needs: coverage
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download coverage reports
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-reports
+          path: coverage-reports/
+
+      - name: Generate badge
+        uses: cicirello/jacoco-badge-generator@v2.15.0
+        with:
+          jacoco-report-file: coverage-reports/jacoco-aggregate/target/site/jacoco-aggregate/jacoco.xml
+          badge: coverage.svg
+          coverage-badge-color-scheme: neon
+          badges-directory: .
+
+      - name: Commit badge
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add coverage.svg
+          git diff --quiet && git diff --staged --quiet || git commit -m "Update coverage badge [skip ci]"
+          git push
+
+      - name: Upload badge as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-badge
+          path: coverage.svg

@@ -1,0 +1,219 @@
+# GitHub Actions Workflow - Main CI Pipeline
+# Runs on every push and pull request
+# Includes build, unit tests, and quality checks
+
+name: CI
+
+on:
+  push:
+    branches: [ main, develop, 'feature/**', 'fix/**' ]
+  pull_request:
+    branches: [ main, develop ]
+
+env:
+  JAVA_VERSION: '21'
+  JAVA_DISTRIBUTION: 'temurin'
+
+jobs:
+  # Build and compile check
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: 'maven'
+
+      - name: Build with Maven
+        run: ./mvnw clean compile -DskipTests
+
+      - name: Verify packaging
+        run: ./mvnw package -DskipTests -DskipITs
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            **/target/*.jar
+            !**/target/*-sources.jar
+            !**/target/*-javadoc.jar
+
+  # Unit tests for all modules
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 20
+
+    strategy:
+      matrix:
+        module:
+          - javainfohunter-ai-service
+          - javainfohunter-crawler
+          - javainfohunter-processor
+          - javainfohunter-api
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: 'maven'
+
+      - name: Run unit tests for ${{ matrix.module }}
+        run: ./mvnw test -pl ${{ matrix.module }}
+
+      - name: Generate coverage report for ${{ matrix.module }}
+        run: ./mvnw jacoco:report -pl ${{ matrix.module }}
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results-${{ matrix.module }}
+          path: ${{ matrix.module }}/target/surefire-reports/
+
+  # Code quality checks
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: 'maven'
+
+      - name: Run Checkstyle (if configured)
+        run: ./mvnw checkstyle:check
+        continue-on-error: true
+
+      - name: Run SpotBugs (if configured)
+        run: ./mvnw spotbugs:check
+        continue-on-error: true
+
+      - name: Run PMD (if configured)
+        run: ./mvnw pmd:check
+        continue-on-error: true
+
+      - name: Check dependency updates
+        run: ./mvnw versions:display-dependency-updates
+        continue-on-error: true
+
+      - name: Upload quality reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-quality-reports
+          path: |
+            **/target/checkstyle-result.xml
+            **/target/spotbugsXml.xml
+            **/target/pmd.xml
+
+  # Security scanning
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+
+      - name: Run OWASP Dependency Check
+        run: ./mvnw org.owasp:dependency-check-maven:check
+        continue-on-error: true
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Upload security reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            **/target/dependency-check-report.html
+            trivy-results.sarif
+
+  # Test results summary
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [unit-tests]
+    if: always()
+
+    steps:
+      - name: Download all test results
+        uses: actions/download-artifact@v4
+        with:
+          path: test-results/
+
+      - name: Publish test results
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: test-results/**/*.xml
+          check_name: Unit Test Results
+
+  # Build status check
+  status-check:
+    name: Build Status
+    runs-on: ubuntu-latest
+    needs: [build, unit-tests, code-quality, security-scan]
+    if: always()
+
+    steps:
+      - name: Check build status
+        run: |
+          echo "Build Status Summary"
+          echo "===================="
+          echo "Build: ${{ needs.build.result }}"
+          echo "Unit Tests: ${{ needs.unit-tests.result }}"
+          echo "Code Quality: ${{ needs.code-quality.result }}"
+          echo "Security Scan: ${{ needs.security-scan.result }}"
+
+      - name: Fail if any critical job failed
+        if: |
+          needs.build.result == 'failure' ||
+          needs.unit-tests.result == 'failure'
+        run: exit 1

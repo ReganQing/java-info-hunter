@@ -54,7 +54,7 @@ public abstract class BaseExternalServiceTest {
 
         // AI Service Configuration
         registry.add("spring.ai.dashscope.api-key",
-            () -> System.getProperty("test.dashscope.api.key", "sk-test-key-for-testing-only"));
+            () -> System.getProperty("test.dashscope.api.key", "DISABLED-AI-KEY-NOT-CONFIGURED"));
         registry.add("spring.ai.dashscope.chat.enabled", () -> "false");
 
         // Actuator Configuration

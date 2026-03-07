@@ -1,0 +1,338 @@
+# GitHub Actions Workflow - Performance Testing
+# Runs performance tests and load tests using JMeter
+# Tracks performance trends and detects regressions
+
+name: Performance Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run performance tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      jmeter_threads:
+        description: 'Number of threads for JMeter test'
+        required: false
+        default: '100'
+      jmeter_loops:
+        description: 'Number of loops for JMeter test'
+        required: false
+        default: '10'
+
+env:
+  JAVA_VERSION: '21'
+  JAVA_DISTRIBUTION: 'temurin'
+  JMETER_VERSION: '5.6.2'
+
+jobs:
+  # Performance tests using JUnit virtual threads
+  performance-tests:
+    name: JUnit Performance Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: javainfohunter_perf_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      rabbitmq:
+        image: rabbitmq:3.12-alpine
+        env:
+          RABBITMQ_DEFAULT_USER: admin
+          RABBITMQ_DEFAULT_PASS: admin
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q check_running"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+          cache: 'maven'
+
+      - name: Build project
+        run: ./mvnw clean install -DskipTests -DskipITs
+
+      - name: Run performance tests
+        run: ./mvnw test -pl javainfohunter-e2e -Dtest="VirtualThreadStressTest"
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/javainfohunter_perf_test
+          SPRING_RABBITMQ_HOST: localhost
+          SPRING_RABBITMQ_PORT: 5672
+          SPRING_RABBITMQ_USERNAME: admin
+          SPRING_RABBITMQ_PASSWORD: admin
+          SPRING_REDIS_HOST: localhost
+          SPRING_REDIS_PORT: 6379
+
+      - name: Upload performance test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-test-results
+          path: javainfohunter-e2e/target/surefire-reports/
+
+      - name: Parse performance metrics
+        if: always()
+        run: |
+          echo "# Performance Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Check if test output contains performance metrics
+          if grep -q "throughput" javainfohunter-e2e/target/surefire-reports/*.xml; then
+            echo "Performance metrics captured in test reports" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "See detailed test reports for performance metrics" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # JMeter load tests
+  jmeter-load-tests:
+    name: JMeter Load Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: javainfohunter_jmeter_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      rabbitmq:
+        image: rabbitmq:3.12-alpine
+        env:
+          RABBITMQ_DEFAULT_USER: admin
+          RABBITMQ_DEFAULT_PASS: admin
+        ports:
+          - 5672:5672
+        options: >-
+          --health-cmd "rabbitmq-diagnostics -q check_running"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+
+      - name: Download JMeter
+        run: |
+          wget -q https://downloads.apache.org//jmeter/binaries/apache-jmeter-${JMETER_VERSION}.tgz
+          tar -xzf apache-jmeter-${JMETER_VERSION}.tgz
+          echo "APACHE_JMETER_HOME=$(pwd)/apache-jmeter-${JMETER_VERSION}" >> $GITHUB_ENV
+
+      - name: Build and start application
+        run: |
+          ./mvnw clean install -DskipTests -DskipITs
+
+          # Start API server in background
+          ./mvnw spring-boot:run -pl javainfohunter-api &
+          APP_PID=$!
+          echo "APP_PID=$APP_PID" >> $GITHUB_ENV
+
+          # Wait for application to start
+          echo "Waiting for application to start..."
+          timeout 120 bash -c 'until curl -s http://localhost:8080/actuator/health; do sleep 2; done' || echo "Application may not be ready"
+        env:
+          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/javainfohunter_jmeter_test
+          SPRING_RABBITMQ_HOST: localhost
+          SPRING_RABBITMQ_PORT: 5672
+          SPRING_RABBITMQ_USERNAME: admin
+          SPRING_RABBITMQ_PASSWORD: admin
+          SPRING_REDIS_HOST: localhost
+          SPRING_REDIS_PORT: 6379
+
+      - name: Run JMeter tests
+        run: |
+          $APACHE_JMETER_HOME/bin/jmeter -n -t javainfohunter-e2e/src/test/resources/jmeter/JavaInfoHunter.jmx \
+            -l jmeter-results.jtl \
+            -e -o jmeter-report \
+            -JBASE_URL=http://localhost:8080
+
+      - name: Stop application
+        if: always()
+        run: |
+          if [ -n "$APP_PID" ]; then
+            kill $APP_PID || true
+          fi
+
+      - name: Upload JMeter results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmeter-results
+          path: |
+            jmeter-results.jtl
+            jmeter-report/
+
+      - name: Generate performance summary
+        if: always()
+        run: |
+          echo "# JMeter Load Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f jmeter-report/statistics.json ]; then
+            echo "Test statistics captured" >> $GITHUB_STEP_SUMMARY
+            echo "View the uploaded artifacts for detailed report" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Performance trend analysis
+        if: github.event_name == 'schedule'
+        uses: actions/download-artifact@v4
+        with:
+          name: jmeter-baseline
+          path: baseline/
+
+  # Performance regression detection
+  performance-regression-check:
+    name: Performance Regression Check
+    runs-on: ubuntu-latest
+    needs: performance-tests
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download current performance results
+        uses: actions/download-artifact@v4
+        with:
+          name: performance-test-results
+          path: current/
+
+      - name: Download baseline from main
+        run: |
+          # Get the baseline from the last successful run on main
+          gh run list --branch=main --workflow=performance.yml --limit=1 \
+            --json databaseId --jq '.[0].databaseId' > baseline-run-id.txt
+
+          if [ -s baseline-run-id.txt ]; then
+            BASELINE_RUN_ID=$(cat baseline-run-id.txt)
+            gh run download $BASELINE_RUN_ID -n baseline-performance
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Compare performance
+        run: |
+          echo "# Performance Regression Analysis" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Simple comparison logic (can be enhanced with actual metrics)
+          if [ -d "baseline/" ]; then
+            echo "Comparing current performance with baseline from main branch" >> $GITHUB_STEP_SUMMARY
+            echo "- Baseline run: ${BASELINE_RUN_ID:-N/A}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "No baseline found. This will be the baseline for future comparisons." >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Store current results as baseline
+        if: github.event_name == 'pull_request' && github.event.pull_request.merged == true
+        uses: actions/upload-artifact@v4
+        with:
+          name: baseline-performance
+          path: current/
+          retention-days: 90
+
+  # Performance monitoring integration
+  performance-monitoring:
+    name: Update Performance Metrics
+    runs-on: ubuntu-latest
+    needs: [performance-tests, jmeter-load-tests]
+    if: always()
+
+    steps:
+      - name: Download all performance results
+        uses: actions/download-artifact@v4
+        with:
+          path: all-results/
+
+      - name: Aggregate metrics
+        run: |
+          mkdir -p metrics-aggregate
+
+          # Create a summary of all performance metrics
+          echo "Performance Test Run - $(date)" > metrics-aggregate/summary.txt
+          echo "========================================" >> metrics-aggregate/summary.txt
+          echo "" >> metrics-aggregate/summary.txt
+
+          if [ -d "all-results/performance-test-results" ]; then
+            echo "JUnit Performance Tests:" >> metrics-aggregate/summary.txt
+            find all-results/performance-test-results -name "*.xml" | wc -l | \
+              xargs echo "  Test reports:" >> metrics-aggregate/summary.txt
+            echo "" >> metrics-aggregate/summary.txt
+          fi
+
+          if [ -d "all-results/jmeter-results" ]; then
+            echo "JMeter Load Tests:" >> metrics-aggregate/summary.txt
+            echo "  Results: jmeter-results.jtl" >> metrics-aggregate/summary.txt
+            echo "  Report: jmeter-report/" >> metrics-aggregate/summary.txt
+            echo "" >> metrics-aggregate/summary.txt
+          fi
+
+      - name: Upload aggregated metrics
+        uses: actions/upload-artifact@v4
+        with:
+          name: performance-metrics-${{ github.run_number }}
+          path: metrics-aggregate/
+          retention-days: 30

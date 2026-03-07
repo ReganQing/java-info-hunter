@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"
+     xmlns:content="http://purl.org/rss/1.0/modules/content/"
+     xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title>Test Tech News Feed</title>
+        <link>https://example.com</link>
+        <description>A test RSS feed for E2E testing</description>
+        <language>en-us</language>
+        <lastBuildDate>Mon, 07 Mar 2026 10:00:00 +0000</lastBuildDate>
+
+        <item>
+            <title>AI Breakthrough: New Model Achieves Human-Level Performance</title>
+            <link>https://example.com/articles/ai-breakthrough-001</link>
+            <description>Researchers have developed a new AI model that achieves human-level performance on complex reasoning tasks.</description>
+            <content:encoded><![CDATA[
+                <p>In a groundbreaking development, researchers at Tech Institute have announced a new AI model that demonstrates human-level performance across a wide range of complex reasoning tasks.</p>
+                <p>The model, called "Cognitive-3", shows remarkable capabilities in mathematical reasoning, logical inference, and creative problem-solving.</p>
+                <p>"This represents a significant milestone in AI research," said Dr. Jane Smith, lead researcher on the project.</p>
+            ]]></content:encoded>
+            <dc:creator>John Doe</dc:creator>
+            <pubDate>Mon, 07 Mar 2026 09:30:00 +0000</pubDate>
+            <category>Artificial Intelligence</category>
+            <category>Research</category>
+            <guid isPermaLink="false">tag:example.com,2026:ai-breakthrough-001</guid>
+        </item>
+
+        <item>
+            <title>Spring Boot 4.0 Released with Revolutionary Features</title>
+            <link>https://example.com/articles/spring-boot-4-release</link>
+            <description>Spring Boot 4.0 brings native image compilation, virtual thread support, and improved performance.</description>
+            <content:encoded><![CDATA[
+                <p>The Spring Team has released Spring Boot 4.0, featuring revolutionary improvements in performance and developer experience.</p>
+                <p>Key highlights include:</p>
+                <ul>
+                    <li>Native image compilation with GraalVM</li>
+                    <li>First-class support for Java 21 virtual threads</li>
+                    <li>30% faster startup time</li>
+                    <li>Reduced memory footprint</li>
+                </ul>
+                <p>Enterprise adoption is expected to accelerate significantly with this release.</p>
+            ]]></content:encoded>
+            <dc:creator>Jane Developer</dc:creator>
+            <pubDate>Mon, 07 Mar 2026 08:45:00 +0000</pubDate>
+            <category>Java</category>
+            <category>Spring Framework</category>
+            <category>Software Development</category>
+            <guid isPermaLink="false">tag:example.com,2026:spring-boot-4-release</guid>
+        </item>
+
+        <item>
+            <title>Cybersecurity Alert: New Vulnerability Affects Millions</title>
+            <link>https://example.com/articles/cybersecurity-alert-2026</link>
+            <description>A critical vulnerability has been discovered in widely-used enterprise software.</description>
+            <content:encoded><![CDATA[
+                <p>Cybersecurity researchers have identified a critical vulnerability (CVE-2026-1234) affecting millions of enterprise systems worldwide.</p>
+                <p>The vulnerability, dubbed "ShadowBreak", allows remote attackers to execute arbitrary code without authentication.</p>
+                <p>Major software vendors have released emergency patches. Organizations are urged to update immediately.</p>
+                <p>"This is one of the most serious vulnerabilities we've seen in years," warned security expert Mark Johnson.</p>
+            ]]></content:encoded>
+            <dc:creator>Security Team</dc:creator>
+            <pubDate>Mon, 07 Mar 2026 07:15:00 +0000</pubDate>
+            <category>Cybersecurity</category>
+            <category>Enterprise Software</category>
+            <guid isPermaLink="false">tag:example.com,2026:cybersecurity-alert-2026</guid>
+        </item>
+
+        <item>
+            <title>Cloud Computing Market Surpasses $500 Billion</title>
+            <link>https://example.com/articles/cloud-market-2026</link>
+            <description>The global cloud computing market has exceeded $500 billion in annual revenue.</description>
+            <content:encoded><![CDATA[
+                <p>According to the latest market research, the global cloud computing market has surpassed $500 billion in annual revenue.</p>
+                <p>Major players including AWS, Azure, and Google Cloud continue to dominate, but emerging providers are gaining market share.</p>
+                <p>Key growth drivers include:</p>
+                <ul>
+                    <li>Enterprise digital transformation</li>
+                    <li>AI and ML workloads moving to the cloud</li>
+                    <li>Edge computing expansion</li>
+                </ul>
+                <p>Analysts predict the market will reach $1 trillion by 2030.</p>
+            ]]></content:encoded>
+            <dc:creator>Market Analyst</dc:creator>
+            <pubDate>Sun, 06 Mar 2026 18:00:00 +0000</pubDate>
+            <category>Cloud Computing</category>
+            <category>Market Analysis</category>
+            <guid isPermaLink="false">tag:example.com,2026:cloud-market-2026</guid>
+        </item>
+
+        <item>
+            <title>Quantum Computing Milestone: 1000-Qubit Processor</title>
+            <link>https://example.com/articles/quantum-1000-qubits</link>
+            <description>IBM announces the first commercially available 1000-qubit quantum processor.</description>
+            <content:encoded><![CDATA[
+                <p>IBM has unveiled the first commercially available 1000-qubit quantum processor, marking a significant milestone in quantum computing.</p>
+                <p>The "Quantum-1000" processor demonstrates improved coherence times and error correction capabilities.</p>
+                <p>"This brings us closer to practical quantum advantage for real-world problems," said IBM's quantum computing director.</p>
+                <p>Early applications are expected in drug discovery, financial modeling, and optimization problems.</p>
+            ]]></content:encoded>
+            <dc:creator>Quantum Researcher</dc:creator>
+            <pubDate>Sun, 06 Mar 2026 14:30:00 +0000</pubDate>
+            <category>Quantum Computing</category>
+            <category>Hardware</category>
+            <guid isPermaLink="false">tag:example.com,2026:quantum-1000-qubits</guid>
+        </item>
+    </channel>
+</rss>
