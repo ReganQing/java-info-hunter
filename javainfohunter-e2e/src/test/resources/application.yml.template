@@ -1,19 +1,21 @@
+# E2E Test Configuration Template
+# Copy this file to application-local.yml and configure with your local settings
+
 spring:
   application:
     name: javainfohunter-e2e
 
-  # Database configuration (will be overridden by Testcontainers)
-  # WARNING: These are WEAK test credentials for local development only!
-  # For CI/CD, use GitHub Secrets or environment variables.
+  # Database configuration
+  # WARNING: Use strong passwords for production!
   datasource:
-    url: jdbc:postgresql://localhost:5432/test
-    username: ${DB_USERNAME:test}
-    password: ${DB_PASSWORD:test}
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:javainfohunter_test}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   # JPA configuration
   jpa:
-    hibernate:
+    hpa:
       ddl-auto: create-drop
     show-sql: false
     properties:
@@ -21,25 +23,24 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
 
-  # Flyway (disabled for E2E tests, using ddl-auto instead)
+  # Flyway (disabled for E2E tests)
   flyway:
     enabled: false
 
-  # RabbitMQ configuration (will be overridden by Testcontainers)
-  # WARNING: These are WEAK test credentials for local development only!
+  # RabbitMQ configuration
   rabbitmq:
-    host: localhost
-    port: 5672
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME}
+    password: ${RABBITMQ_PASSWORD}
     publisher-confirm-type: correlated
     publisher-returns: true
 
   # Redis configuration
   data:
     redis:
-      host: localhost
-      port: 6379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
       timeout: 3000ms
       lettuce:
         pool:
@@ -47,10 +48,16 @@ spring:
           max-idle: 8
           min-idle: 0
 
+  # AI Service Configuration
+  ai:
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY:DISABLED-AI-KEY-NOT-CONFIGURED}
+      enabled: ${AI_ENABLED:false}
+
 # Application configuration
 javainfohunter:
   ai:
-    enabled: false
+    enabled: ${AI_ENABLED:false}
     agent:
       max-steps: 10
       timeout: 300
@@ -70,8 +77,8 @@ javainfohunter:
 # Logging configuration
 logging:
   level:
-    com.ron.javainfohunter: DEBUG
-    org.springframework.amqp: INFO
+    com.ron.javainfohunter: ${LOG_LEVEL:INFO}
+    org.springframework.amqp: ${RABBITMQ_LOG_LEVEL:INFO}
     org.hibernate.SQL: WARN
     org.hibernate.type.descriptor.sql.BasicBinder: WARN
   pattern:

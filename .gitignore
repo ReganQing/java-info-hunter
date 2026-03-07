@@ -32,3 +32,35 @@ build/
 ### VS Code ###
 .vscode/
 */.drawio.bkp
+
+### Security - Local Configuration ###
+# Environment variables with secrets
+.env
+.env.local
+.env.*.local
+
+# Application local configuration
+application-local.yml
+application-local.yaml
+application-local.properties
+
+# Claude Code local settings
+.claude/settings.local.json
+.claude/*.local
+
+### Security - Secrets ###
+*.key
+*.pem
+*.p12
+*.jks
+*.keystore
+secrets/
+credentials/
+
+### Logs ###
+*.log
+logs/
+
+### Test Results ###
+test-results/
+*.jtl

@@ -15,6 +15,11 @@ env:
   JAVA_VERSION: '21'
   JAVA_DISTRIBUTION: 'temurin'
   COVERAGE_THRESHOLD: '0.80'
+  # Use GitHub Secrets for production (default values for CI)
+  DB_USERNAME: ${{ secrets.DB_USERNAME || 'postgres' }}
+  DB_PASSWORD: ${{ secrets.DB_PASSWORD || 'postgres' }}
+  RABBITMQ_USERNAME: ${{ secrets.RABBITMQ_USERNAME || 'admin' }}
+  RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD || 'admin' }}
 
 jobs:
   # Run all tests with coverage
@@ -27,8 +32,8 @@ jobs:
       postgres:
         image: postgres:15-alpine
         env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: ${{ env.DB_USERNAME }}
+          POSTGRES_PASSWORD: ${{ env.DB_PASSWORD }}
           POSTGRES_DB: javainfohunter_test
         ports:
           - 5432:5432
@@ -41,8 +46,8 @@ jobs:
       rabbitmq:
         image: rabbitmq:3.12-alpine
         env:
-          RABBITMQ_DEFAULT_USER: admin
-          RABBITMQ_DEFAULT_PASS: admin
+          RABBITMQ_DEFAULT_USER: ${{ env.RABBITMQ_USERNAME }}
+          RABBITMQ_DEFAULT_PASS: ${{ env.RABBITMQ_PASSWORD }}
         ports:
           - 5672:5672
         options: >-

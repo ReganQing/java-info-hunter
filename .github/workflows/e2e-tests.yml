@@ -14,8 +14,11 @@ on:
 env:
   JAVA_VERSION: '21'
   JAVA_DISTRIBUTION: 'temurin'
-  DB_USERNAME: postgres
-  DB_PASSWORD: postgres
+  # Use GitHub Secrets for production (default values for CI)
+  DB_USERNAME: ${{ secrets.DB_USERNAME || 'postgres' }}
+  DB_PASSWORD: ${{ secrets.DB_PASSWORD || 'postgres' }}
+  RABBITMQ_USERNAME: ${{ secrets.RABBITMQ_USERNAME || 'admin' }}
+  RABBITMQ_PASSWORD: ${{ secrets.RABBITMQ_PASSWORD || 'admin' }}
 
 jobs:
   # Quick smoke tests - runs on all events
@@ -42,8 +45,8 @@ jobs:
       rabbitmq:
         image: rabbitmq:3.12-alpine
         env:
-          RABBITMQ_DEFAULT_USER: admin
-          RABBITMQ_DEFAULT_PASS: admin
+          RABBITMQ_DEFAULT_USER: ${{ env.RABBITMQ_USERNAME }}
+          RABBITMQ_DEFAULT_PASS: ${{ env.RABBITMQ_PASSWORD }}
         ports:
           - 5672:5672
         options: >-
@@ -129,8 +132,8 @@ jobs:
       rabbitmq:
         image: rabbitmq:3.12-alpine
         env:
-          RABBITMQ_DEFAULT_USER: admin
-          RABBITMQ_DEFAULT_PASS: admin
+          RABBITMQ_DEFAULT_USER: ${{ env.RABBITMQ_USERNAME }}
+          RABBITMQ_DEFAULT_PASS: ${{ env.RABBITMQ_PASSWORD }}
         ports:
           - 5672:5672
         options: >-
@@ -227,8 +230,8 @@ jobs:
       rabbitmq:
         image: rabbitmq:3.12-alpine
         env:
-          RABBITMQ_DEFAULT_USER: admin
-          RABBITMQ_DEFAULT_PASS: admin
+          RABBITMQ_DEFAULT_USER: ${{ env.RABBITMQ_USERNAME }}
+          RABBITMQ_DEFAULT_PASS: ${{ env.RABBITMQ_PASSWORD }}
         ports:
           - 5672:5672
         options: >-
