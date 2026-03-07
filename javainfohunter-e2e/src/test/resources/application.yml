@@ -1,0 +1,85 @@
+spring:
+  application:
+    name: javainfohunter-e2e
+
+  # Database configuration (will be overridden by Testcontainers)
+  datasource:
+    url: jdbc:postgresql://localhost:5432/test
+    username: test
+    password: test
+    driver-class-name: org.postgresql.Driver
+
+  # JPA configuration
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+
+  # Flyway (disabled for E2E tests, using ddl-auto instead)
+  flyway:
+    enabled: false
+
+  # RabbitMQ configuration (will be overridden by Testcontainers)
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    publisher-confirm-type: correlated
+    publisher-returns: true
+
+  # Redis configuration
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+# Application configuration
+javainfohunter:
+  ai:
+    enabled: false
+    agent:
+      max-steps: 10
+      timeout: 300
+
+  # RabbitMQ configuration
+  rabbitmq:
+    exchange:
+      crawled-content: x.crawled-content
+      processed-content: x.processed-content
+    queue:
+      raw-content: q.raw-content
+      processed-content: q.processed-content
+    routing-key:
+      crawled-content: rk.crawled-content
+      processed-content: rk.processed-content
+
+# Logging configuration
+logging:
+  level:
+    com.ron.javainfohunter: DEBUG
+    org.springframework.amqp: INFO
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Actuator configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always

@@ -15,7 +15,9 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
  */
 @SpringBootApplication(scanBasePackages = {
     "com.ron.javainfohunter.processor",
-    "com.ron.javainfohunter.ai"
+    "com.ron.javainfohunter.ai",
+    "com.ron.javainfohunter.repository",
+    "com.ron.javainfohunter.entity"
 })
 @EnableJpaAuditing
 public class ProcessorApplication {

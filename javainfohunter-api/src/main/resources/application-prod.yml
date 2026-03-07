@@ -1,0 +1,140 @@
+server:
+  port: 8080
+  shutdown: graceful  # Enable graceful shutdown
+  tomcat:
+    threads:
+      max: 200
+      min-spare: 10
+
+spring:
+  application:
+    name: javainfohunter-api
+
+  # Database configuration
+  datasource:
+    url: jdbc:postgresql://${DB_HOST}:${DB_PORT:5432}/javainfohunter
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 20
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      connection-test-query: SELECT 1
+
+  jpa:
+    hibernate:
+      ddl-auto: validate  # Only validate schema in production
+    show-sql: false       # Never show SQL in production
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+        jdbc:
+          batch_size: 50
+          order_inserts: true
+          order_updates: true
+        cache:
+          use_second_level_cache: true
+          use_query_cache: true
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    out-of-order: false
+
+  # Redis configuration
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD}
+      database: 0
+      timeout: 5000ms
+      jedis:
+        pool:
+          max-active: 50
+          max-idle: 20
+          min-idle: 10
+          max-wait: 5000ms
+
+  # Boot admin (for monitoring)
+  boot:
+    admin:
+      client:
+        enabled: true
+        url: ${BOOT_ADMIN_URL:http://localhost:8888}
+        instance:
+          name: ${spring.application.name}:${server.port}
+          service-base-url: ${spring.boot.admin.client.url}
+
+# Actuator configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,threaddump,heapdump
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: never  # Never show details in production
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+        step: 30s
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+        spring.data.repository: true
+      percentiles:
+        http.server.requests: 0.5,0.95,0.99
+      sla:
+        http.server.requests: 100ms,500ms,1s,5s
+    tags:
+      application: ${spring.application.name}
+    enable:
+      jvm: true
+      process: true
+      system: true
+      logback: true
+  tracing:
+    sampling:
+      probability: 0.1  # Sample 10% of requests
+
+# SpringDoc OpenAPI configuration
+springdoc:
+  api-docs:
+    enabled: false  # Disable API docs in production
+  swagger-ui:
+    enabled: false
+  show-actuator: false
+
+# Knife4j configuration
+knife4j:
+  enable: false  # Disable Knife4j in production
+  production: true
+
+# Logging configuration
+logging:
+  level:
+    root: WARN
+    com.ron.javainfohunter: INFO
+    org.springframework.web: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: /var/log/javainfohunter/api.log
+    max-size: 500MB
+    max-history: 60
+    total-size-cap: 10GB
+  logback:
+    rollingpolicy:
+      clean-history-on-start: true

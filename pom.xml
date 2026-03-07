@@ -33,6 +33,9 @@
         <spring-ai.version>1.0.2</spring-ai.version>
         <spring-ai-alibaba.version>1.0.0-M2.1</spring-ai-alibaba.version>
         <hutool.version>5.8.38</hutool.version>
+        <testcontainers.version>1.20.4</testcontainers.version>
+        <restassured.version>5.5.0</restassured.version>
+        <jacoco.version>0.8.12</jacoco.version>
     </properties>
 
     <!-- 子模块 -->
@@ -40,6 +43,8 @@
         <module>javainfohunter-ai-service</module>
         <module>javainfohunter-crawler</module>
         <module>javainfohunter-processor</module>
+        <module>javainfohunter-api</module>
+        <module>javainfohunter-e2e</module>
     </modules>
 
     <!-- 依赖管理 -->
@@ -61,6 +66,24 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>com.ron</groupId>
+                <artifactId>javainfohunter-crawler</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.ron</groupId>
+                <artifactId>javainfohunter-processor</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.ron</groupId>
+                <artifactId>javainfohunter-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <!-- Rome RSS/Atom Feed Parser -->
             <dependency>
                 <groupId>com.rometools</groupId>
@@ -71,6 +94,65 @@
                 <groupId>com.rometools</groupId>
                 <artifactId>rome-modules</artifactId>
                 <version>1.19.0</version>
+            </dependency>
+
+            <!-- Redis -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-data-redis</artifactId>
+                <version>3.3.5</version>
+            </dependency>
+            <dependency>
+                <groupId>redis.clients</groupId>
+                <artifactId>jedis</artifactId>
+                <version>5.1.2</version>
+            </dependency>
+
+            <!-- Spring AOP for Rate Limiting -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-aop</artifactId>
+                <version>3.3.5</version>
+            </dependency>
+
+            <!-- Spring Boot Actuator for Monitoring -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-actuator</artifactId>
+                <version>3.3.5</version>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-registry-prometheus</artifactId>
+                <version>1.12.5</version>
+            </dependency>
+
+            <!-- Micrometer Tracing -->
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-tracing-bridge-brave</artifactId>
+                <version>1.12.5</version>
+            </dependency>
+            <dependency>
+                <groupId>io.zipkin.reporter2</groupId>
+                <artifactId>zipkin-reporter-brave</artifactId>
+                <version>3.4.0</version>
+            </dependency>
+
+            <!-- Testcontainers BOM -->
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>testcontainers-bom</artifactId>
+                <version>${testcontainers.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- RestAssured for API Testing -->
+            <dependency>
+                <groupId>io.rest-assured</groupId>
+                <artifactId>rest-assured</artifactId>
+                <version>${restassured.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -137,6 +219,48 @@
                         </exclude>
                     </excludes>
                 </configuration>
+            </plugin>
+
+            <!-- JaCoCo for Code Coverage -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>check</id>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>INSTRUCTION</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.80</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
