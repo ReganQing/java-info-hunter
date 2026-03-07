@@ -39,6 +39,7 @@ class CrawlMetricsCollectorTest {
         int itemCount = 10;
         long durationMs = 1000;
 
+        metricsCollector.recordCrawlStart(sourceUrl);  // Must call start first
         metricsCollector.recordCrawlSuccess(sourceUrl, itemCount, durationMs);
 
         CrawlMetricsCollector.CrawlMetricsSummary summary = metricsCollector.getSummary();
@@ -110,8 +111,11 @@ class CrawlMetricsCollectorTest {
     void testTimingStatistics() {
         String sourceUrl = "https://example.com/rss";
 
+        metricsCollector.recordCrawlStart(sourceUrl);
         metricsCollector.recordCrawlSuccess(sourceUrl, 10, 500);
+        metricsCollector.recordCrawlStart(sourceUrl);
         metricsCollector.recordCrawlSuccess(sourceUrl, 10, 1000);
+        metricsCollector.recordCrawlStart(sourceUrl);
         metricsCollector.recordCrawlSuccess(sourceUrl, 10, 1500);
 
         CrawlMetricsCollector.CrawlMetricsSummary summary = metricsCollector.getSummary();
@@ -125,8 +129,11 @@ class CrawlMetricsCollectorTest {
     void testSuccessRateCalculation() {
         String sourceUrl = "https://example.com/rss";
 
+        metricsCollector.recordCrawlStart(sourceUrl);
         metricsCollector.recordCrawlSuccess(sourceUrl, 10, 1000);
+        metricsCollector.recordCrawlStart(sourceUrl);
         metricsCollector.recordCrawlSuccess(sourceUrl, 10, 1000);
+        metricsCollector.recordCrawlStart(sourceUrl);
         metricsCollector.recordCrawlFailure(sourceUrl, ErrorType.CONNECTION_ERROR, 500);
 
         CrawlMetricsCollector.CrawlMetricsSummary summary = metricsCollector.getSummary();
