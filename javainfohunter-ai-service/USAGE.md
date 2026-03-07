@@ -123,6 +123,8 @@ public void parallelAnalysis(String content) {
 
 ### Master-Worker 模式（主从协作）
 
+Master Agent 负责任务分配和结果汇总，Workers 并行执行子任务：
+
 ```java
 public void masterWorkerExample(String task) {
     CoordinationResult result = taskCoordinator.executeMasterWorker(
@@ -130,8 +132,36 @@ public void masterWorkerExample(String task) {
         "coordinator-agent",  // Master
         List.of("crawler-agent", "analysis-agent", "summary-agent")  // Workers
     );
+
+    if (result.isSuccess()) {
+        log.info("Master 汇总结果: {}", result.getFinalOutput());
+        log.info("Worker 结果: {}", result.getAgentOutputs());
+    }
 }
 ```
+
+**使用 TrendingCoordinatorAgent 追踪热点话题**：
+
+```java
+@Autowired
+private TrendingCoordinatorAgent trendingCoordinator;
+
+public String trackTrendingTopic(String topic) {
+    String result = trendingCoordinator.trackTrending(topic);
+    String summary = trendingCoordinator.getTrackingSummary();
+
+    log.info("追踪结果: {}", result);
+    log.info("摘要: {}", summary);
+
+    return result;
+}
+```
+
+**流程**:
+1. Master Agent 接收任务
+2. Workers 并行执行（爬取 → 分析 → 告警）
+3. Master 汇总结果
+4. 返回综合报告
 
 ## 完整工作流示例
 

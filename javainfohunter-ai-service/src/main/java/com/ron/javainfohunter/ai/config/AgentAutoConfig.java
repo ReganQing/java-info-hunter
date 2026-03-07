@@ -3,8 +3,10 @@ package com.ron.javainfohunter.ai.config;
 import com.ron.javainfohunter.ai.agent.coordinator.AgentManager;
 import com.ron.javainfohunter.ai.agent.specialized.AnalysisAgent;
 import com.ron.javainfohunter.ai.agent.specialized.ClassificationAgent;
+import com.ron.javainfohunter.ai.agent.specialized.CoordinatorAgent;
 import com.ron.javainfohunter.ai.agent.specialized.CrawlerAgent;
 import com.ron.javainfohunter.ai.agent.specialized.SummaryAgent;
+import com.ron.javainfohunter.ai.agent.specialized.TrendingCoordinatorAgent;
 import com.ron.javainfohunter.ai.tool.core.ToolRegistry;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -41,6 +43,12 @@ public class AgentAutoConfig {
 
     @Autowired
     private ClassificationAgent classificationAgent;
+
+    @Autowired
+    private CoordinatorAgent coordinatorAgent;
+
+    @Autowired
+    private TrendingCoordinatorAgent trendingCoordinatorAgent;
 
     @Autowired
     private ChatClient chatClient;
@@ -82,6 +90,14 @@ public class AgentAutoConfig {
         classificationAgent.setAvailableTools(tools);  // 使用父类的 setter
         agentManager.registerAgent("classification-agent", classificationAgent);
         log.info("✓ 已注册 ClassificationAgent");
+
+        // 注册 CoordinatorAgent
+        agentManager.registerAgent("coordinator-agent", coordinatorAgent);
+        log.info("✓ 已注册 CoordinatorAgent");
+
+        // 注册 TrendingCoordinatorAgent
+        agentManager.registerAgent("trending-coordinator-agent", trendingCoordinatorAgent);
+        log.info("✓ 已注册 TrendingCoordinatorAgent");
 
         log.info("========== Agent 注册完成 ==========");
         log.info("当前可用 Agent: {}", agentManager.getAgentNames());

@@ -68,12 +68,67 @@ public class TaskCoordinatorImpl implements TaskCoordinator {
             // 获取 Master Agent
             BaseAgent masterAgent = agentManager.getAgent(masterAgentId).orElseThrow();
 
-            // TODO: 实现 Master-Worker 逻辑
-            // 1. Master 分配任务给 Workers
-            // 2. Workers 并行执行
-            // 3. Master 汇总结果
+            // 如果 Master Agent 是 CoordinatorAgent，设置 Workers
+            if (masterAgent instanceof com.ron.javainfohunter.ai.agent.specialized.CoordinatorAgent coordinator) {
+                coordinator.setWorkers(workerAgentIds);
+            }
 
-            return CoordinationResult.failure("Master-Worker pattern not implemented yet");
+            // 并行执行 Workers
+            Map<String, String> agentOutputs = new HashMap<>();
+            List<CompletableFuture<WorkerResultEntry>> workerFutures = workerAgentIds.stream()
+                    .map(workerId -> CompletableFuture.supplyAsync(() -> {
+                        long workerStartTime = System.currentTimeMillis();
+                        try {
+                            BaseAgent worker = agentManager.getAgent(workerId).orElseThrow();
+                            log.info("Master-Worker: Executing worker {}", workerId);
+
+                            String output = worker.run(taskDescription);
+                            long executionTime = System.currentTimeMillis() - workerStartTime;
+
+                            return new WorkerResultEntry(workerId, true, output, null, executionTime);
+                        } catch (Exception e) {
+                            long executionTime = System.currentTimeMillis() - workerStartTime;
+                            log.error("Worker {} failed", workerId, e);
+                            return new WorkerResultEntry(workerId, false, null, e.getMessage(), executionTime);
+                        }
+                    }, executor))
+                    .toList();
+
+            // 等待所有 Workers 完成
+            CompletableFuture.allOf(workerFutures.toArray(new CompletableFuture[0])).join();
+
+            // 收集 Worker 结果
+            List<WorkerResultEntry> workerResults = workerFutures.stream()
+                    .map(CompletableFuture::join)
+                    .toList();
+
+            // 将结果添加到 Master Agent（如果是 CoordinatorAgent）
+            if (masterAgent instanceof com.ron.javainfohunter.ai.agent.specialized.CoordinatorAgent coordinator) {
+                for (WorkerResultEntry entry : workerResults) {
+                    com.ron.javainfohunter.ai.agent.coordinator.pattern.WorkerResult result =
+                            com.ron.javainfohunter.ai.agent.coordinator.pattern.WorkerResult.builder()
+                                    .workerId(entry.workerId())
+                                    .success(entry.success())
+                                    .output(entry.output())
+                                    .errorMessage(entry.errorMessage())
+                                    .executionTimeMs(entry.executionTimeMs())
+                                    .build();
+                    coordinator.addWorkerResult(result);
+                }
+            }
+
+            // 收集所有 Agent 输出
+            for (WorkerResultEntry entry : workerResults) {
+                String output = entry.success() ? entry.output() : "Error: " + entry.errorMessage();
+                agentOutputs.put(entry.workerId(), output);
+            }
+
+            // 执行 Master Agent 进行结果汇总
+            String masterOutput = masterAgent.run(taskDescription);
+            agentOutputs.put(masterAgentId, masterOutput);
+
+            Duration duration = Duration.between(startTime, LocalDateTime.now());
+            return CoordinationResult.success(masterOutput, agentOutputs, duration);
 
         } catch (Exception e) {
             log.error("Master-Worker execution failed", e);
@@ -83,6 +138,17 @@ public class TaskCoordinatorImpl implements TaskCoordinator {
             log.debug("Master-Worker execution took {} ms", duration.toMillis());
         }
     }
+
+    /**
+     * Worker 结果记录（内部使用）
+     */
+    private record WorkerResultEntry(
+            String workerId,
+            boolean success,
+            String output,
+            String errorMessage,
+            long executionTimeMs
+    ) {}
 
     @Override
     public CoordinationResult executeChain(String taskDescription, List<String> agentIds) {
