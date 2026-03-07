@@ -87,7 +87,7 @@ jobs:
         run: ./mvnw clean install -DskipTests -DskipITs
 
       - name: Run smoke tests (integration tests only)
-        run: ./mvnw test -pl javainfohunter-e2e -Dtest="*IntegrationTest" -Dtestcontainers.enable=false
+        run: ./mvnw test -pl javainfohunter-e2e -Dtest="*IntegrationTest"
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/javainfohunter_test
           SPRING_RABBITMQ_HOST: localhost
@@ -167,7 +167,7 @@ jobs:
         run: ./mvnw clean install -DskipTests -DskipITs
 
       - name: Run all E2E tests
-        run: ./mvnw test -pl javainfohunter-e2e -Dtestcontainers.enable=false
+        run: ./mvnw test -pl javainfohunter-e2e
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/javainfohunter_test
           SPRING_RABBITMQ_HOST: localhost
@@ -265,7 +265,7 @@ jobs:
         run: ./mvnw clean install -DskipTests -DskipITs
 
       - name: Run API endpoint tests
-        run: ./mvnw test -pl javainfohunter-e2e -Dtest="ApiEndpointsE2ETest" -Dtestcontainers.enable=false
+        run: ./mvnw test -pl javainfohunter-e2e -Dtest="ApiEndpointsE2ETest"
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/javainfohunter_test
           SPRING_RABBITMQ_HOST: localhost

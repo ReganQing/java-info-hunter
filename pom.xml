@@ -241,6 +241,19 @@
                         </goals>
                     </execution>
                     <execution>
+                        <id>report-aggregate</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report-aggregate</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/site/jacoco-aggregate</outputDirectory>
+                            <includes>
+                                <include>com.ron.**</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>check</id>
                         <goals>
                             <goal>check</goal>

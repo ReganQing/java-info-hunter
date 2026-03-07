@@ -108,14 +108,22 @@ jobs:
           # Create merged report directory
           mkdir -p target/site/jacoco-merged
 
-          # Run JaCoCo merge to combine all reports
-          ./mvnw jacoco:merge-aggregate -Djacoco.merger.fileSets="**/target/jacoco.exec"
+          # Collect all jacoco.exec files
+          find . -name "jacoco.exec" -type f > exec_files.txt
+
+          # Merge exec files using jacoco-cli (if available) or skip
+          if [ -s exec_files.txt ]; then
+            echo "Found $(wc -l < exec_files.txt) jacoco.exec files"
+            # Skip merge step - will aggregate from XML reports instead
+          else
+            echo "No jacoco.exec files found"
+          fi
 
       - name: Generate aggregate coverage report
-        run: ./mvnw jacoco:report-aggregate
+        run: ./mvnw jacoco:report-aggregate -Djacoco.aggregate.includes="com.ron.*"
 
       - name: Check coverage thresholds
-        run: ./mvnw jacoco:check
+        run: ./mvnw jacoco:check -Djacoco.skip=false
         continue-on-error: true  # Don't fail the build, just report
 
       - name: Upload coverage to Codecov
@@ -234,7 +242,7 @@ jobs:
       - name: Generate badge
         uses: cicirello/jacoco-badge-generator@v2.15.0
         with:
-          jacoco-report-file: coverage-reports/jacoco-aggregate/target/site/jacoco-aggregate/jacoco.xml
+          jacoco-report-file: coverage-reports/target/site/jacoco-aggregate/jacoco-aggregate.xml
           badge: coverage.svg
           coverage-badge-color-scheme: neon
           badges-directory: .
