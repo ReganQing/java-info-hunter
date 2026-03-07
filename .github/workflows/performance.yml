@@ -85,7 +85,7 @@ jobs:
           cache: 'maven'
 
       - name: Build project
-        run: ./mvnw clean install -DskipTests -DskipITs
+        run: ./mvnw clean install -DskipTests -DskipITs -Djacoco.skip=true
 
       - name: Run performance tests
         run: ./mvnw test -pl javainfohunter-e2e -Dtest="VirtualThreadStressTest"

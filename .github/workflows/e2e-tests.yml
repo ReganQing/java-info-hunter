@@ -84,7 +84,7 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
 
       - name: Build project
-        run: ./mvnw clean install -DskipTests -DskipITs
+        run: ./mvnw clean install -DskipTests -DskipITs -Djacoco.skip=true
 
       - name: Run smoke tests (integration tests only)
         run: ./mvnw test -pl javainfohunter-e2e -Dtest="*IntegrationTest"
@@ -164,7 +164,7 @@ jobs:
           cache: 'maven'
 
       - name: Build with dependencies
-        run: ./mvnw clean install -DskipTests -DskipITs
+        run: ./mvnw clean install -DskipTests -DskipITs -Djacoco.skip=true
 
       - name: Run all E2E tests
         run: ./mvnw test -pl javainfohunter-e2e
@@ -262,7 +262,7 @@ jobs:
           cache: 'maven'
 
       - name: Build project
-        run: ./mvnw clean install -DskipTests -DskipITs
+        run: ./mvnw clean install -DskipTests -DskipITs -Djacoco.skip=true
 
       - name: Run API endpoint tests
         run: ./mvnw test -pl javainfohunter-e2e -Dtest="ApiEndpointsE2ETest"

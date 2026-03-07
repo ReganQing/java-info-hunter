@@ -251,6 +251,8 @@
                             <includes>
                                 <include>com.ron.**</include>
                             </includes>
+                            <!-- Only run if tests were executed (check for data file) -->
+                            <skip>${jacoco.skip}</skip>
                         </configuration>
                     </execution>
                     <execution>

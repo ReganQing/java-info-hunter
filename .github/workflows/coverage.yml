@@ -87,7 +87,7 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
 
       - name: Build all modules
-        run: ./mvnw clean install -DskipTests -DskipITs
+        run: ./mvnw clean install -DskipTests -DskipITs -Djacoco.skip=true
 
       - name: Run unit tests with coverage
         run: ./mvnw test jacoco:report -Djacoco.skip=false
