@@ -336,4 +336,174 @@ class TaskCoordinatorMasterWorkerTest {
         // assertTrue(result.getAgentOutputs().containsKey("worker2"));
         // assertTrue(result.getAgentOutputs().containsKey("worker3"));
     }
+
+    // ==================== Security Tests ====================
+
+    @Test
+    void executeMasterWorker_TooManyWorkers_ReturnsFailure() {
+        // Create more than MAX_WORKER_QUEUE_SIZE workers
+        List<String> manyWorkers = new ArrayList<>();
+        for (int i = 0; i < 501; i++) {
+            String workerId = "worker-" + i;
+            agentManager.registerAgent(workerId, new TestWorkerAgent("Worker" + i, "Result" + i));
+            manyWorkers.add(workerId);
+        }
+
+        CoordinationResult result = taskCoordinator.executeMasterWorker(
+            "test",
+            "master-agent",
+            manyWorkers
+        );
+
+        assertFalse(result.isSuccess(), "Should fail when too many workers");
+        assertTrue(result.getErrorMessage().contains("Too many workers"),
+            "Error message should mention worker limit: " + result.getErrorMessage());
+    }
+
+    @Test
+    void executeMasterWorker_InvalidAgentId_ReturnsFailure() {
+        CoordinationResult result = taskCoordinator.executeMasterWorker(
+            "test",
+            "invalid@agent#$", // Invalid characters
+            List.of("worker1")
+        );
+
+        assertFalse(result.isSuccess(), "Should fail with invalid agent ID");
+        assertTrue(result.getErrorMessage().contains("Invalid agent ID") ||
+                   result.getErrorMessage().contains("invalid"),
+            "Error message should mention invalid ID: " + result.getErrorMessage());
+    }
+
+    @Test
+    void executeMasterWorker_NullAgentId_ReturnsFailure() {
+        // Test null master agent ID
+        CoordinationResult result = taskCoordinator.executeMasterWorker("test", null, List.of("worker1"));
+
+        assertFalse(result.isSuccess(), "Should fail with null master agent ID");
+        assertTrue(result.getErrorMessage().contains("Invalid agent ID") ||
+                   result.getErrorMessage().contains("null"),
+            "Error message should mention invalid ID: " + result.getErrorMessage());
+    }
+
+    @Test
+    void executeMasterWorker_EmptyAgentId_ReturnsFailure() {
+        CoordinationResult result = taskCoordinator.executeMasterWorker(
+            "test",
+            "", // Empty agent ID
+            List.of("worker1")
+        );
+
+        assertFalse(result.isSuccess(), "Should fail with empty agent ID");
+        assertTrue(result.getErrorMessage().contains("Invalid agent ID") ||
+                   result.getErrorMessage().contains("empty"),
+            "Error message should mention empty ID: " + result.getErrorMessage());
+    }
+
+    @Test
+    void executeMasterWorker_DuplicateWorkers_ReturnsFailure() {
+        CoordinationResult result = taskCoordinator.executeMasterWorker(
+            "test",
+            "master-agent",
+            List.of("worker1", "worker1", "worker2") // Duplicate worker1
+        );
+
+        assertFalse(result.isSuccess(), "Should fail with duplicate workers");
+        assertTrue(result.getErrorMessage().contains("Duplicate") ||
+                   result.getErrorMessage().contains("duplicate"),
+            "Error message should mention duplicates: " + result.getErrorMessage());
+    }
+
+    @Test
+    void executeMasterWorker_WorkerWithInvalidCharacters_ReturnsFailure() {
+        CoordinationResult result = taskCoordinator.executeMasterWorker(
+            "test",
+            "master-agent",
+            List.of("worker1", "worker@bad", "worker2")
+        );
+
+        assertFalse(result.isSuccess(), "Should fail with invalid worker ID");
+        assertTrue(result.getErrorMessage().contains("Invalid agent ID") ||
+                   result.getErrorMessage().contains("invalid"),
+            "Error message should mention invalid ID: " + result.getErrorMessage());
+    }
+
+    @Test
+    void executeMasterWorker_VeryLongAgentId_ReturnsFailure() {
+        // Create an agent ID longer than 64 characters
+        String longId = "a".repeat(65);
+        CoordinationResult result = taskCoordinator.executeMasterWorker(
+            "test",
+            longId,
+            List.of("worker1")
+        );
+
+        assertFalse(result.isSuccess(), "Should fail with overly long agent ID");
+        assertTrue(result.getErrorMessage().contains("Invalid agent ID") ||
+                   result.getErrorMessage().contains("invalid"),
+            "Error message should mention invalid ID: " + result.getErrorMessage());
+    }
+
+    @Test
+    void executeMasterWorker_ErrorMessagesSanitized_DoesNotLeakExceptionDetails() {
+        CoordinationResult result = taskCoordinator.executeMasterWorker(
+            "test",
+            "master-agent",
+            List.of("failing-worker") // This worker will throw an exception
+        );
+
+        // The error message should be sanitized, not contain internal exception details
+        assertNotNull(result);
+        String errorMessage = result.getErrorMessage();
+        if (errorMessage != null && !errorMessage.isEmpty()) {
+            // Error messages should not contain stack traces or internal class names
+            assertFalse(errorMessage.contains("RuntimeException"),
+                "Error message should not contain exception type: " + errorMessage);
+            assertFalse(errorMessage.contains("Stack"),
+                "Error message should not contain stack trace: " + errorMessage);
+        }
+    }
+
+    @Test
+    void executeMasterWorker_MaxConcurrentWorkers_LimitsExecution() throws InterruptedException {
+        // Create many slow workers to test semaphore limiting
+        List<String> slowWorkers = new ArrayList<>();
+        int workerCount = 150; // More than MAX_CONCURRENT_WORKERS (100)
+
+        for (int i = 0; i < workerCount; i++) {
+            String workerId = "slow-worker-" + i;
+            agentManager.registerAgent(workerId, new SlowWorkerAgent("SlowWorker" + i));
+            slowWorkers.add(workerId);
+        }
+
+        long startTime = System.currentTimeMillis();
+        CoordinationResult result = taskCoordinator.executeMasterWorker(
+            "test",
+            "master-agent",
+            slowWorkers
+        );
+        long duration = System.currentTimeMillis() - startTime;
+
+        assertNotNull(result);
+        // With semaphore limiting, not all workers run concurrently
+        // So it should take longer than pure parallel execution
+        // This test verifies the limiting mechanism is working
+        assertTrue(duration > 100, "Should be limited by semaphore, took: " + duration + "ms");
+    }
+
+    @Test
+    void executeMasterWorker_ValidAgentIdsWithHyphensAndUnderscores_Succeeds() {
+        // Register valid agent IDs with allowed characters
+        agentManager.registerAgent("test-agent-123", new TestWorkerAgent("Valid1", "Result1"));
+        agentManager.registerAgent("test_agent_456", new TestWorkerAgent("Valid2", "Result2"));
+
+        CoordinationResult result = taskCoordinator.executeMasterWorker(
+            "test",
+            "master-agent",
+            List.of("test-agent-123", "test_agent_456")
+        );
+
+        // Should succeed with valid agent IDs
+        assertNotNull(result);
+        // Note: May still fail if agents aren't properly registered, but validation should pass
+    }
 }

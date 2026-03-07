@@ -1,5 +1,8 @@
 package com.ron.javainfohunter.ai.tool.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ron.javainfohunter.ai.agent.coordinator.pattern.TaskDelegation;
 import com.ron.javainfohunter.ai.agent.coordinator.pattern.WorkerResult;
 import com.ron.javainfohunter.ai.tool.annotation.Tool;
@@ -7,7 +10,7 @@ import com.ron.javainfohunter.ai.tool.annotation.ToolParam;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +27,12 @@ import java.util.Map;
 @Slf4j
 @Component
 public class CoordinatorTools {
+
+    private final ObjectMapper objectMapper;
+
+    public CoordinatorTools() {
+        this.objectMapper = new ObjectMapper();
+    }
 
     /**
      * 分配任务给 Workers
@@ -163,58 +172,49 @@ public class CoordinatorTools {
     }
 
     /**
-     * 解析 Worker 任务 JSON（简化实现）
+     * 解析 Worker 任务 JSON（使用 Jackson ObjectMapper）
+     * <p>
+     * 安全地解析 JSON 字符串为 Map，防止注入攻击
+     * </p>
      *
      * @param json JSON 字符串
      * @return Worker 任务映射
+     * @throws IllegalArgumentException 如果 JSON 格式无效
      */
-    private Map<String, String> parseWorkerTasksJson(String json) {
-        // 简化实现：实际应使用 ObjectMapper
-        Map<String, String> result = new HashMap<>();
-
+    Map<String, String> parseWorkerTasksJson(String json) {
         if (json == null || json.isEmpty()) {
-            return result;
+            return Collections.emptyMap();
         }
 
-        // 移除大括号和引号，简单解析
-        String content = json.replaceAll("[{}\"]", "");
-        String[] pairs = content.split(",");
-
-        for (String pair : pairs) {
-            String[] keyValue = pair.split(":");
-            if (keyValue.length == 2) {
-                result.put(keyValue[0].trim(), keyValue[1].trim());
-            }
+        try {
+            TypeReference<Map<String, String>> typeRef = new TypeReference<>() {};
+            return objectMapper.readValue(json, typeRef);
+        } catch (JsonProcessingException e) {
+            log.error("Invalid JSON format for worker tasks", e);
+            throw new IllegalArgumentException("Invalid JSON format for worker tasks", e);
         }
-
-        return result;
     }
 
     /**
-     * 解析 Worker ID JSON（简化实现）
+     * 解析 Worker ID JSON（使用 Jackson ObjectMapper）
+     * <p>
+     * 安全地解析 JSON 字符串为 List，防止注入攻击
+     * </p>
      *
      * @param json JSON 字符串
      * @return Worker ID 列表
+     * @throws IllegalArgumentException 如果 JSON 格式无效
      */
-    private List<String> parseWorkerIdsJson(String json) {
-        // 简化实现：实际应使用 ObjectMapper
-        List<String> result = new ArrayList<>();
-
+    List<String> parseWorkerIdsJson(String json) {
         if (json == null || json.isEmpty()) {
-            return result;
+            return Collections.emptyList();
         }
 
-        // 移除括号和引号
-        String content = json.replaceAll("[\\[\\]\"]", "");
-        String[] ids = content.split(",");
-
-        for (String id : ids) {
-            String trimmed = id.trim();
-            if (!trimmed.isEmpty()) {
-                result.add(trimmed);
-            }
+        try {
+            return objectMapper.readValue(json, new TypeReference<List<String>>() {});
+        } catch (JsonProcessingException e) {
+            log.error("Invalid JSON format for worker IDs", e);
+            throw new IllegalArgumentException("Invalid JSON format for worker IDs", e);
         }
-
-        return result;
     }
 }

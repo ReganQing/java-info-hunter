@@ -10,11 +10,15 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -32,8 +36,23 @@ import java.util.stream.Collectors;
 @Slf4j
 public class TaskCoordinatorImpl implements TaskCoordinator {
 
+    // Security constants for DoS prevention
+    private static final int MAX_CONCURRENT_WORKERS = 100;
+    private static final int MAX_WORKER_QUEUE_SIZE = 500;
+    private static final int WORKER_TIMEOUT_SECONDS = 30;
+    private static final int MASTER_TIMEOUT_SECONDS = 300;
+
+    // Agent ID validation pattern (alphanumeric, hyphens, underscores, 1-64 chars)
+    private static final Pattern AGENT_ID_PATTERN = Pattern.compile("^[a-zA-Z0-9-_]{1,64}$");
+
+    // Sanitized error messages (prevent information leakage)
+    private static final String WORKER_ERROR_MSG = "Worker execution failed";
+    private static final String COORDINATION_ERROR_MSG = "Task coordination failed";
+    private static final String WORKER_TIMEOUT_MSG = "Worker execution timed out";
+
     private final AgentManager agentManager;
     private final ExecutorService executor;
+    private final Semaphore workerLimiter;
 
     /**
      * 构造函数
@@ -44,6 +63,44 @@ public class TaskCoordinatorImpl implements TaskCoordinator {
         this.agentManager = agentManager;
         // 使用虚拟线程执行器（JDK 21+）
         this.executor = Executors.newVirtualThreadPerTaskExecutor();
+        // Semaphore to limit concurrent workers (DoS prevention)
+        this.workerLimiter = new Semaphore(MAX_CONCURRENT_WORKERS);
+    }
+
+    /**
+     * Validate agent ID format
+     *
+     * @param agentId the agent ID to validate
+     * @throws IllegalArgumentException if agent ID is invalid
+     */
+    private void validateAgentId(String agentId) {
+        if (agentId == null || agentId.isEmpty()) {
+            throw new IllegalArgumentException("Agent ID cannot be null or empty");
+        }
+        if (!AGENT_ID_PATTERN.matcher(agentId).matches()) {
+            throw new IllegalArgumentException(
+                "Invalid agent ID format: must be 1-64 alphanumeric characters, hyphens, or underscores"
+            );
+        }
+    }
+
+    /**
+     * Validate a list of agent IDs
+     *
+     * @param agentIds the list of agent IDs to validate
+     * @throws IllegalArgumentException if validation fails
+     */
+    private void validateAgentIds(List<String> agentIds) {
+        if (agentIds == null) {
+            throw new IllegalArgumentException("Agent IDs list cannot be null");
+        }
+        // Check for duplicates
+        Set<String> uniqueIds = new HashSet<>(agentIds);
+        if (uniqueIds.size() != agentIds.size()) {
+            throw new IllegalArgumentException("Duplicate agent IDs detected");
+        }
+        // Validate each ID
+        agentIds.forEach(this::validateAgentId);
     }
 
     @Override
@@ -53,6 +110,21 @@ public class TaskCoordinatorImpl implements TaskCoordinator {
         LocalDateTime startTime = LocalDateTime.now();
 
         try {
+            // Validate agent IDs (security check)
+            try {
+                validateAgentId(masterAgentId);
+                validateAgentIds(workerAgentIds);
+            } catch (IllegalArgumentException e) {
+                return CoordinationResult.failure("Invalid agent ID: " + e.getMessage());
+            }
+
+            // Check worker queue size limit (DoS prevention)
+            if (workerAgentIds.size() > MAX_WORKER_QUEUE_SIZE) {
+                return CoordinationResult.failure(
+                    "Too many workers. Maximum: " + MAX_WORKER_QUEUE_SIZE + ", provided: " + workerAgentIds.size()
+                );
+            }
+
             // 验证 Master Agent
             if (!agentManager.isAgentRegistered(masterAgentId)) {
                 return CoordinationResult.failure("Master agent not found: " + masterAgentId);
@@ -73,29 +145,49 @@ public class TaskCoordinatorImpl implements TaskCoordinator {
                 coordinator.setWorkers(workerAgentIds);
             }
 
-            // 并行执行 Workers
+            // 并行执行 Workers (with semaphore limiting and timeout)
             Map<String, String> agentOutputs = new HashMap<>();
             List<CompletableFuture<WorkerResultEntry>> workerFutures = workerAgentIds.stream()
                     .map(workerId -> CompletableFuture.supplyAsync(() -> {
                         long workerStartTime = System.currentTimeMillis();
                         try {
-                            BaseAgent worker = agentManager.getAgent(workerId).orElseThrow();
-                            log.info("Master-Worker: Executing worker {}", workerId);
+                            // Acquire semaphore (DoS prevention)
+                            workerLimiter.acquire();
+                            try {
+                                BaseAgent worker = agentManager.getAgent(workerId).orElseThrow();
+                                log.info("Master-Worker: Executing worker {}", workerId);
 
-                            String output = worker.run(taskDescription);
+                                String output = worker.run(taskDescription);
+                                long executionTime = System.currentTimeMillis() - workerStartTime;
+
+                                return new WorkerResultEntry(workerId, true, output, null, executionTime);
+                            } finally {
+                                workerLimiter.release();
+                            }
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
                             long executionTime = System.currentTimeMillis() - workerStartTime;
-
-                            return new WorkerResultEntry(workerId, true, output, null, executionTime);
+                            log.error("Worker {} interrupted", workerId, e);
+                            return new WorkerResultEntry(workerId, false, null, WORKER_TIMEOUT_MSG, executionTime);
                         } catch (Exception e) {
                             long executionTime = System.currentTimeMillis() - workerStartTime;
-                            log.error("Worker {} failed", workerId, e);
-                            return new WorkerResultEntry(workerId, false, null, e.getMessage(), executionTime);
+                            log.error("Worker {} failed", workerId, e); // Full details in log only
+                            return new WorkerResultEntry(workerId, false, null, WORKER_ERROR_MSG, executionTime);
                         }
                     }, executor))
                     .toList();
 
             // 等待所有 Workers 完成
-            CompletableFuture.allOf(workerFutures.toArray(new CompletableFuture[0])).join();
+            try {
+                CompletableFuture.allOf(workerFutures.toArray(new CompletableFuture[0]))
+                    .get(MASTER_TIMEOUT_SECONDS, java.util.concurrent.TimeUnit.SECONDS);
+            } catch (java.util.concurrent.TimeoutException e) {
+                log.error("Master-Worker execution timed out after {}s", MASTER_TIMEOUT_SECONDS);
+                return CoordinationResult.failure(COORDINATION_ERROR_MSG);
+            } catch (Exception e) {
+                log.error("Master-Worker execution failed", e);
+                return CoordinationResult.failure(COORDINATION_ERROR_MSG);
+            }
 
             // 收集 Worker 结果
             List<WorkerResultEntry> workerResults = workerFutures.stream()
@@ -131,8 +223,8 @@ public class TaskCoordinatorImpl implements TaskCoordinator {
             return CoordinationResult.success(masterOutput, agentOutputs, duration);
 
         } catch (Exception e) {
-            log.error("Master-Worker execution failed", e);
-            return CoordinationResult.failure("Master-Worker execution failed: " + e.getMessage());
+            log.error("Master-Worker execution failed for task: {}", taskDescription, e);
+            return CoordinationResult.failure(COORDINATION_ERROR_MSG);
         } finally {
             Duration duration = Duration.between(startTime, LocalDateTime.now());
             log.debug("Master-Worker execution took {} ms", duration.toMillis());
