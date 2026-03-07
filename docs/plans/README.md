@@ -1,6 +1,6 @@
 # Docs/Plans 目录索引
 
-> **最后更新:** 2026-03-07 (Master-Worker 协作模式完成)
+> **最后更新:** 2026-03-07 (P0 Task 1 Crawler Critical Issues 已验证解决)
 > **用途:** 记录项目计划、进度跟踪、实现总结
 
 ---
@@ -53,6 +53,7 @@ docs/plans/
 | 文档 | 模块 | 完成日期 |
 |------|------|----------|
 | [../Master-Worker模式实现总结.md](../Master-Worker模式实现总结.md) | Master-Worker 协作模式 | 2026-03-07 |
+| P0 Task 1: Crawler Critical Issues | Crawler 模块 | 2026-03-07 |
 | [2026-03-06-infrastructure-summary.md](./completed/2026-03-06-infrastructure-summary.md) | 基础设施集成 | 2026-03-06 |
 | [2026-03-06-api-module-implementation-summary.md](./completed/2026-03-06-api-module-implementation-summary.md) | REST API 模块 | 2026-03-06 |
 | [2026-03-06-processor-storage-summary.md](./completed/2026-03-06-processor-storage-summary.md) | Processor 存储 | 2026-03-06 |
