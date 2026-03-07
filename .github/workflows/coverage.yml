@@ -90,7 +90,7 @@ jobs:
         run: ./mvnw clean install -DskipTests -DskipITs -Djacoco.skip=true
 
       - name: Run unit tests with coverage
-        run: ./mvnw test jacoco:report -Djacoco.skip=false
+        run: ./mvnw test jacoco:report -Djacoco.skip=false -Pcoverage
 
       - name: Run E2E tests with coverage
         run: ./mvnw test -pl javainfohunter-e2e jacoco:report
@@ -120,10 +120,10 @@ jobs:
           fi
 
       - name: Generate aggregate coverage report
-        run: ./mvnw jacoco:report-aggregate -Djacoco.aggregate.includes="com.ron.*"
+        run: ./mvnw jacoco:report-aggregate -Djacoco.aggregate.includes="com.ron.*" -Pcoverage
 
       - name: Check coverage thresholds
-        run: ./mvnw jacoco:check -Djacoco.skip=false
+        run: ./mvnw jacoco:check -Djacoco.skip=false -Pcoverage
         continue-on-error: true  # Don't fail the build, just report
 
       - name: Upload coverage to Codecov
