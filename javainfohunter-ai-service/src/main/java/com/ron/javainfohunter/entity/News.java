@@ -88,20 +88,16 @@ public class News {
     private String fullContent;
 
     /**
-     * AI-extracted topics
+     * AI-extracted topics (PostgreSQL array)
      */
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "news_topics", joinColumns = @JoinColumn(name = "news_id"))
-    @Column(name = "topic")
-    private List<String> topics;
+    @Column(columnDefinition = "text[]")
+    private String[] topics;
 
     /**
-     * AI-extracted keywords
+     * AI-extracted keywords (PostgreSQL array)
      */
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "news_keywords", joinColumns = @JoinColumn(name = "news_id"))
-    @Column(name = "keyword")
-    private List<String> keywords;
+    @Column(columnDefinition = "text[]")
+    private String[] keywords;
 
     /**
      * Sentiment classification
@@ -135,12 +131,10 @@ public class News {
     private String category;
 
     /**
-     * AI-assigned tags
+     * AI-assigned tags (PostgreSQL array)
      */
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "news_tags", joinColumns = @JoinColumn(name = "news_id"))
-    @Column(name = "tag")
-    private List<String> tags;
+    @Column(columnDefinition = "text[]")
+    private String[] tags;
 
     /**
      * Content language (ISO 639-1 code)

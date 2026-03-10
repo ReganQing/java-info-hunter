@@ -26,16 +26,15 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class RedisServiceImpl implements RedisService {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final StringRedisTemplate stringRedisTemplate;
 
     // Lua scripts for distributed locking (atomic operations)
-    private final DefaultRedisScript<Long> acquireLockScript;
-    private final DefaultRedisScript<Long> releaseLockScript;
-    private final DefaultRedisScript<Long> extendLockScript;
+    private DefaultRedisScript<Long> acquireLockScript;
+    private DefaultRedisScript<Long> releaseLockScript;
+    private DefaultRedisScript<Long> extendLockScript;
 
     // Prefix constants
     private static final String RSS_SOURCE_PREFIX = "rss:source:";
@@ -44,13 +43,19 @@ public class RedisServiceImpl implements RedisService {
     private static final String RATE_LIMIT_PREFIX = "ratelimit:";
 
     /**
-     * Constructor with Lua script initialization
+     * Constructor with dependency injection
      */
     public RedisServiceImpl(RedisTemplate<String, Object> redisTemplate,
                            StringRedisTemplate stringRedisTemplate) {
         this.redisTemplate = redisTemplate;
         this.stringRedisTemplate = stringRedisTemplate;
+    }
 
+    /**
+     * Initialize Lua scripts after dependency injection
+     */
+    @jakarta.annotation.PostConstruct
+    public void init() {
         // Initialize Lua scripts
         this.acquireLockScript = new DefaultRedisScript<>();
         this.acquireLockScript.setScriptText(
@@ -84,6 +89,8 @@ public class RedisServiceImpl implements RedisService {
             "end"
         );
         this.extendLockScript.setResultType(Long.class);
+
+        log.debug("Lua scripts initialized successfully");
     }
 
     // ==================== RSS Source Caching ====================

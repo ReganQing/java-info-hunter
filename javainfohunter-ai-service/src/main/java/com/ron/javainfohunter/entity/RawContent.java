@@ -89,7 +89,6 @@ public class RawContent {
      * Raw HTML or plain text content
      */
     @NotBlank(message = "Raw content cannot be blank")
-    @Lob
     @Column(nullable = false, columnDefinition = "TEXT")
     private String rawContent;
 

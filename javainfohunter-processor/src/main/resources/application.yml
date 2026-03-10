@@ -13,7 +13,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/javainfohunter
     username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:}
+    password: ${DB_PASSWORD:postgres}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 10
@@ -65,7 +65,7 @@ spring:
       connection:
         mode: channel
 
-    # Spring AI DashScope Configuration
+  # Spring AI DashScope Configuration
   ai:
     dashscope:
       api-key: ${DASHSCOPE_API_KEY}
@@ -73,6 +73,9 @@ spring:
         options:
           model: qwen-max
           temperature: 0.7
+
+server:
+  port: 8082
 
 # Processor Module Configuration
 javainfohunter:
@@ -111,8 +114,8 @@ javainfohunter:
 
     # Queue Configuration
     queue:
-      # Input queue name (from crawler)
-      input-queue: ${INPUT_QUEUE:crawler.raw.content.queue}
+      # Input queue name (from crawler) - binds to crawler.direct exchange
+      input-queue: ${INPUT_QUEUE:processor.raw.content.queue}
       # Dead letter queue for failed messages
       dead-letter-queue: ${DEAD_LETTER_QUEUE:processor.dead.letter.queue}
       # Maximum retry attempts before sending to DLQ

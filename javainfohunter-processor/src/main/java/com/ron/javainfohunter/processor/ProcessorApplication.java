@@ -2,7 +2,9 @@ package com.ron.javainfohunter.processor;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /**
  * Content Processor Application
@@ -19,6 +21,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
     "com.ron.javainfohunter.repository",
     "com.ron.javainfohunter.entity"
 })
+@EnableJpaRepositories(basePackages = "com.ron.javainfohunter.repository")
+@EntityScan(basePackages = "com.ron.javainfohunter.entity")
 @EnableJpaAuditing
 public class ProcessorApplication {
 

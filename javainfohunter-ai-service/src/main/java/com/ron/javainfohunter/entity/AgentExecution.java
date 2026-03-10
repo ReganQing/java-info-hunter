@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -179,12 +180,10 @@ public class AgentExecution {
     private BigDecimal estimatedCostUsd;
 
     /**
-     * List of tools used during execution
+     * List of tools used during execution (stored as text array in DB)
      */
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "agent_execution_tools", joinColumns = @JoinColumn(name = "agent_execution_id"))
-    @Column(name = "tool")
-    private List<String> toolsUsed;
+    @Column(name = "tools_used", columnDefinition = "text[]")
+    private String[] toolsUsed;
 
     /**
      * Number of tool calls made
@@ -395,14 +394,18 @@ public class AgentExecution {
      * @param tool Tool name
      */
     public void addTool(String tool) {
-        if (toolsUsed == null) {
-            // Note: This would require proper initialization in practice
-            // For now, this is a placeholder for the logic
-        }
         if (toolCallCount == null) {
             toolCallCount = 0;
         }
         toolCallCount++;
+
+        if (toolsUsed == null) {
+            toolsUsed = new String[]{tool};
+        } else {
+            String[] newTools = Arrays.copyOf(toolsUsed, toolsUsed.length + 1);
+            newTools[toolsUsed.length] = tool;
+            toolsUsed = newTools;
+        }
     }
 
     /**

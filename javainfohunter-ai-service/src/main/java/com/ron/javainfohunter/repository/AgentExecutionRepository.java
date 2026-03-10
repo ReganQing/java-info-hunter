@@ -194,7 +194,8 @@ public interface AgentExecutionRepository extends JpaRepository<AgentExecution, 
            "ae.agentId, COUNT(ae), " +
            "SUM(CASE WHEN ae.status = 'COMPLETED' THEN 1 ELSE 0 END), " +
            "SUM(CASE WHEN ae.status = 'FAILED' THEN 1 ELSE 0 END), " +
-           "AVG(ae.durationMilliseconds), SUM(ae.tokensUsed), SUM(ae.estimatedCostUsd)) " +
+           "AVG(CAST(ae.durationMilliseconds AS double)), SUM(ae.tokensUsed), " +
+           "CAST(SUM(ae.estimatedCostUsd) AS double)) " +
            "FROM AgentExecution ae WHERE ae.agentId = :agentId")
     Object getAgentStatistics(@Param("agentId") String agentId);
 

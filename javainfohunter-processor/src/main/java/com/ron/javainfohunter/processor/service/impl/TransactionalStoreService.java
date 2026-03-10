@@ -9,6 +9,7 @@ import com.ron.javainfohunter.repository.RawContentRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
@@ -143,8 +144,8 @@ class TransactionalStoreService {
                 .sentimentScore(convertToBigDecimal(message.getSentimentScore()))
                 .importanceScore(convertToBigDecimal(message.getImportanceScore()))
                 .category(message.getCategory())
-                .tags(message.getTags())
-                .keywords(message.getKeywords())
+                .tags(message.getTags() != null ? message.getTags().toArray(new String[0]) : null)
+                .keywords(message.getKeywords() != null ? message.getKeywords().toArray(new String[0]) : null)
                 .language("zh")
                 .readingTimeMinutes(calculateReadingTime(rawContent.getRawContent()))
                 .isPublished(false)
@@ -190,6 +191,7 @@ class TransactionalStoreService {
     /**
      * Update RawContent processing status.
      */
+    @Transactional
     private void updateRawContentStatus(String contentHash, RawContent.ProcessingStatus status) {
         rawContentRepository.findByContentHash(contentHash).ifPresent(rawContent -> {
             rawContent.setProcessingStatus(status);

@@ -65,6 +65,9 @@ spring:
       connection:
         mode: channel
 
+server:
+  port: 8081
+
 # Crawler Module Configuration
 javainfohunter:
   crawler:

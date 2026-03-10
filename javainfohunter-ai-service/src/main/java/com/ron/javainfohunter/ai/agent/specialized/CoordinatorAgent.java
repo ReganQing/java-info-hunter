@@ -45,6 +45,13 @@ public class CoordinatorAgent extends BaseAgent {
     private final Map<String, WorkerResult> workerResultsMap;
 
     /**
+     * 默认构造函数（用于 Spring 依赖注入）
+     */
+    public CoordinatorAgent() {
+        this("coordinator-agent");
+    }
+
+    /**
      * 构造函数
      *
      * @param name Agent 名称

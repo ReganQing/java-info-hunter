@@ -170,7 +170,7 @@ public interface NewsRepository extends JpaRepository<News, Long> {
      */
     @Query("SELECT n FROM News n WHERE n.isPublished = true AND " +
            "(LOWER(n.title) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
-           "LOWER(n.summary) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
+           "n.summary LIKE CONCAT('%', :searchTerm, '%'))")
     Page<News> searchPublished(@Param("searchTerm") String searchTerm, Pageable pageable);
 
     /**
@@ -335,8 +335,8 @@ public interface NewsRepository extends JpaRepository<News, Long> {
      */
     @Query("SELECT n FROM News n WHERE n.isPublished = true AND " +
            "(LOWER(n.title) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
-           "LOWER(n.summary) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
-           "LOWER(n.fullContent) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
+           "n.summary LIKE CONCAT('%', :searchTerm, '%') OR " +
+           "n.fullContent LIKE CONCAT('%', :searchTerm, '%'))")
     Page<News> fullTextSearch(@Param("searchTerm") String searchTerm, Pageable pageable);
 
     /**

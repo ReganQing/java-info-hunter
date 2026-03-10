@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * RSS Source Service Implementation
@@ -51,7 +52,7 @@ public class RssSourceServiceImpl implements RssSourceService {
                 .url(request.getUrl())
                 .description(request.getDescription())
                 .category(request.getCategory())
-                .tags(request.getTags())
+                .tags(request.getTags() != null ? request.getTags().toArray(new String[0]) : null)
                 .isActive(request.getIsActive() != null ? request.getIsActive() : true)
                 .crawlIntervalSeconds(request.getCrawlIntervalSeconds() != null ?
                         request.getCrawlIntervalSeconds() : 3600)
@@ -122,7 +123,7 @@ public class RssSourceServiceImpl implements RssSourceService {
         source.setUrl(request.getUrl());
         source.setDescription(request.getDescription());
         source.setCategory(request.getCategory());
-        source.setTags(request.getTags());
+        source.setTags(request.getTags() != null ? request.getTags().toArray(new String[0]) : null);
         if (request.getIsActive() != null) {
             source.setIsActive(request.getIsActive());
         }
@@ -195,7 +196,7 @@ public class RssSourceServiceImpl implements RssSourceService {
                 .url(source.getUrl())
                 .description(source.getDescription())
                 .category(source.getCategory())
-                .tags(source.getTags())
+                .tags(source.getTags() != null ? List.of(source.getTags()) : null)
                 .isActive(source.getIsActive())
                 .crawlIntervalSeconds(source.getCrawlIntervalSeconds())
                 .maxRetries(source.getMaxRetries())

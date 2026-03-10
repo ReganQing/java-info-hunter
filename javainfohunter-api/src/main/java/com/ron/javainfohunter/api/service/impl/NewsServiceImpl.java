@@ -163,9 +163,9 @@ public class NewsServiceImpl implements NewsService {
                 .title(news.getTitle())
                 .summary(news.getSummary())
                 .category(news.getCategory())
-                .topics(news.getTopics())
-                .keywords(news.getKeywords())
-                .tags(news.getTags())
+                .topics(news.getTopics() != null ? Arrays.asList(news.getTopics()) : null)
+                .keywords(news.getKeywords() != null ? Arrays.asList(news.getKeywords()) : null)
+                .tags(news.getTags() != null ? Arrays.asList(news.getTags()) : null)
                 .sentiment(news.getSentiment() != null ? news.getSentiment().name() : null)
                 .sentimentScore(news.getSentimentScore())
                 .importanceScore(news.getImportanceScore())
@@ -194,7 +194,7 @@ public class NewsServiceImpl implements NewsService {
                 .summary(news.getSummary())
                 .category(news.getCategory())
                 .similarityScore(0.0) // Placeholder - actual similarity would come from vector search
-                .sharedTagsCount(news.getTopics() != null ? news.getTopics().size() : 0)
+                .sharedTagsCount(news.getTopics() != null ? news.getTopics().length : 0)
                 .publishedAt(news.getPublishedAt())
                 .featuredImageUrl(news.getFeaturedImageUrl())
                 .build();

@@ -83,21 +83,7 @@ public class ContentPublisher {
         this.rabbitTemplate = rabbitTemplate;
         this.crawlerProperties = crawlerProperties;
         this.pendingConfirms = new ConcurrentHashMap<>();
-
-        // Set up confirm callback to complete futures
-        this.rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
-            if (correlationData != null) {
-                String correlationId = correlationData.getId();
-                PendingConfirm pendingConfirm = pendingConfirms.remove(correlationId);
-                if (pendingConfirm != null) {
-                    pendingConfirm.getFuture().complete(ack);
-                    if (!ack) {
-                        log.error("Publisher confirm NACK for correlation ID: {}, cause: {}",
-                            correlationId, cause);
-                    }
-                }
-            }
-        });
+        // Note: Confirm callback is already configured in RabbitMQConfig
     }
 
     /**

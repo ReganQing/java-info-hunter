@@ -71,12 +71,10 @@ public class RssSource {
     private String category;
 
     /**
-     * Array of tags for flexible categorization and filtering
+     * Array of tags for flexible categorization and filtering (PostgreSQL array)
      */
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "rss_source_tags", joinColumns = @JoinColumn(name = "rss_source_id"))
-    @Column(name = "tag")
-    private List<String> tags;
+    @Column(columnDefinition = "text[]")
+    private String[] tags;
 
     /**
      * Crawling interval in seconds (minimum 60s recommended)

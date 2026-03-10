@@ -2,7 +2,9 @@ package com.ron.javainfohunter.crawler;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
+import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 
 /**
  * JavaInfoHunter Crawler Application
@@ -39,7 +41,9 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
  * @see org.springframework.boot.SpringApplication
  * @see org.springframework.data.jpa.repository.config.EnableJpaAuditing
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.ron.javainfohunter")
+@EnableJpaRepositories(basePackages = "com.ron.javainfohunter.repository")
+@EntityScan(basePackages = "com.ron.javainfohunter.entity")
 @EnableJpaAuditing
 public class CrawlerApplication {
 

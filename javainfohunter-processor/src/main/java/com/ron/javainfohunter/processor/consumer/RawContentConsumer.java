@@ -22,12 +22,12 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Consumer for raw content messages from the crawler module.
  *
- * <p>This consumer listens to the {@code crawler.raw.content.queue} and processes
+ * <p>This consumer listens to the {@code processor.raw.content.queue} and processes
  * raw RSS content messages by routing them to appropriate AI agents.</p>
  *
  * <p><b>Message Flow:</b></p>
  * <pre>
- * Crawler Module → crawler.raw.content.queue → RawContentConsumer → ContentRoutingService
+ * Crawler Module → crawler.direct exchange (raw.content) → processor.raw.content.queue → RawContentConsumer → ContentRoutingService
  * </pre>
  *
  * <p><b>Features:</b></p>
@@ -83,7 +83,7 @@ public class RawContentConsumer {
      * @throws ConsumerException if message processing fails
      */
     @RabbitListener(
-        queues = "crawler.raw.content.queue",
+        queues = "${javainfohunter.processor.queue.input-queue}",
         containerFactory = "rabbitListenerContainerFactory",
         ackMode = "MANUAL"
     )
