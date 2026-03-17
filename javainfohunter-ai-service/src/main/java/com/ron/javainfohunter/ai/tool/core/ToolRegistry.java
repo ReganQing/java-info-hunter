@@ -2,6 +2,7 @@ package com.ron.javainfohunter.ai.tool.core;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.tool.ToolCallback;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -19,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Slf4j
 @Component
+@ConditionalOnProperty(prefix = "javainfohunter.ai", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class ToolRegistry {
 
     /**

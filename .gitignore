@@ -64,3 +64,13 @@ logs/
 ### Test Results ###
 test-results/
 *.jtl
+
+### Test Configuration (Local) ###
+testcontainers.properties
+application-production-test.yml
+
+### Process ID Files ###
+*.pid
+
+### Temporary Scripts ###
+scripts/.claude/

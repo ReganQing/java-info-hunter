@@ -133,4 +133,14 @@ public class NewsResponse {
      * Update timestamp
      */
     private Instant updatedAt;
+
+    /**
+     * RSS Source name (for frontend display)
+     */
+    private String sourceName;
+
+    /**
+     * Original article URL (from RawContent)
+     */
+    private String url;
 }

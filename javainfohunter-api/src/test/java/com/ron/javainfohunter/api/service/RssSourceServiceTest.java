@@ -53,7 +53,7 @@ class RssSourceServiceTest {
                 .name("Tech Blog")
                 .url("https://example.com/rss")
                 .category("Technology")
-                .tags(Arrays.asList("tech", "programming"))
+                .tags(new String[]{"tech", "programming"})
                 .isActive(true)
                 .crawlIntervalSeconds(3600)
                 .maxRetries(3)

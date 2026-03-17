@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
@@ -33,18 +34,22 @@ public interface NewsRepository extends JpaRepository<News, Long> {
 
     /**
      * Find published news with pagination
+     * Includes EntityGraph to load rawContent for sourceName and url
      *
      * @param pageable Pagination parameters
      * @return Page of published news
      */
+    @EntityGraph(attributePaths = {"rawContent", "rawContent.rssSource"})
     Page<News> findByIsPublishedTrue(Pageable pageable);
 
     /**
      * Find published news ordered by published date
+     * Includes EntityGraph to load rawContent for sourceName and url
      *
      * @param pageable Pagination parameters
      * @return Page of published news ordered by published date
      */
+    @EntityGraph(attributePaths = {"rawContent", "rawContent.rssSource"})
     Page<News> findByIsPublishedTrueOrderByPublishedAtDesc(Pageable pageable);
 
     /**
@@ -73,20 +78,24 @@ public interface NewsRepository extends JpaRepository<News, Long> {
 
     /**
      * Find published news by category
+     * Includes EntityGraph to load rawContent for sourceName and url
      *
      * @param category Category name
      * @param pageable Pagination parameters
      * @return Page of published news in the category
      */
+    @EntityGraph(attributePaths = {"rawContent", "rawContent.rssSource"})
     Page<News> findByCategoryAndIsPublishedTrue(String category, Pageable pageable);
 
     /**
      * Find news by sentiment
+     * Includes EntityGraph to load rawContent for sourceName and url
      *
      * @param sentiment Sentiment value
      * @param pageable Pagination parameters
      * @return Page of news with the specified sentiment
      */
+    @EntityGraph(attributePaths = {"rawContent", "rawContent.rssSource"})
     Page<News> findBySentiment(News.Sentiment sentiment, Pageable pageable);
 
     /**
@@ -104,6 +113,17 @@ public interface NewsRepository extends JpaRepository<News, Long> {
      * @return Optional containing the news if found
      */
     Optional<News> findByRawContentId(Long rawContentId);
+
+    /**
+     * Find news by ID with rawContent and rssSource loaded
+     * Use this instead of findById when you need sourceName and url
+     *
+     * @param id News ID
+     * @return Optional containing the news if found
+     */
+    @Query("SELECT n FROM News n WHERE n.id = :id")
+    @EntityGraph(attributePaths = {"rawContent", "rawContent.rssSource"})
+    Optional<News> findByIdWithDetails(@Param("id") Long id);
 
     /**
      * Find news with importance score above threshold
@@ -175,21 +195,25 @@ public interface NewsRepository extends JpaRepository<News, Long> {
 
     /**
      * Find news published after a specific date
+     * Includes EntityGraph to load rawContent for sourceName and url
      *
      * @param publishedAt Publication date threshold
      * @param pageable Pagination parameters
      * @return Page of news published after the date
      */
+    @EntityGraph(attributePaths = {"rawContent", "rawContent.rssSource"})
     Page<News> findByPublishedAtAfterOrderByPublishedAtDesc(Instant publishedAt, Pageable pageable);
 
     /**
      * Find news published within a date range
+     * Includes EntityGraph to load rawContent for sourceName and url
      *
      * @param startDate Start date
      * @param endDate End date
      * @param pageable Pagination parameters
      * @return Page of news within the date range
      */
+    @EntityGraph(attributePaths = {"rawContent", "rawContent.rssSource"})
     Page<News> findByPublishedAtBetweenOrderByPublishedAtDesc(Instant startDate, Instant endDate, Pageable pageable);
 
     /**
@@ -258,6 +282,7 @@ public interface NewsRepository extends JpaRepository<News, Long> {
 
     /**
      * Find news by multiple filters
+     * Includes EntityGraph to load rawContent for sourceName and url
      *
      * @param category Category (optional)
      * @param sentiment Sentiment (optional)
@@ -266,6 +291,7 @@ public interface NewsRepository extends JpaRepository<News, Long> {
      * @param pageable Pagination parameters
      * @return Page of filtered news
      */
+    @EntityGraph(attributePaths = {"rawContent", "rawContent.rssSource"})
     @Query("SELECT n FROM News n WHERE " +
            "(:category IS NULL OR n.category = :category) AND " +
            "(:sentiment IS NULL OR n.sentiment = :sentiment) AND " +
@@ -281,11 +307,13 @@ public interface NewsRepository extends JpaRepository<News, Long> {
 
     /**
      * Find trending news (high engagement in last 24 hours)
+     * Includes EntityGraph to load rawContent for sourceName and url
      *
      * @param since Date threshold (typically 24 hours ago)
      * @param pageable Pagination parameters
      * @return Page of trending news
      */
+    @EntityGraph(attributePaths = {"rawContent", "rawContent.rssSource"})
     @Query("SELECT n FROM News n WHERE n.isPublished = true AND n.publishedAt > :since " +
            "ORDER BY (n.viewCount + n.likeCount * 10 + n.shareCount * 20) DESC")
     Page<News> findTrendingNews(@Param("since") Instant since, Pageable pageable);
@@ -328,24 +356,28 @@ public interface NewsRepository extends JpaRepository<News, Long> {
 
     /**
      * Full-text search on news content
+     * Includes EntityGraph to load rawContent for sourceName and url
      *
      * @param searchTerm Search term
      * @param pageable Pagination parameters
      * @return Page of matching news
      */
+    @EntityGraph(attributePaths = {"rawContent", "rawContent.rssSource"})
     @Query("SELECT n FROM News n WHERE n.isPublished = true AND " +
            "(LOWER(n.title) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
-           "n.summary LIKE CONCAT('%', :searchTerm, '%') OR " +
-           "n.fullContent LIKE CONCAT('%', :searchTerm, '%'))")
+           "COALESCE(n.summary, '') LIKE CONCAT('%', :searchTerm, '%') OR " +
+           "COALESCE(n.fullContent, '') LIKE CONCAT('%', :searchTerm, '%'))")
     Page<News> fullTextSearch(@Param("searchTerm") String searchTerm, Pageable pageable);
 
     /**
      * Find similar news by tags (shared tags)
+     * Includes EntityGraph to load rawContent for sourceName and url
      *
      * @param newsId Reference news ID
      * @param pageable Pagination parameters
      * @return Page of similar news
      */
+    @EntityGraph(attributePaths = {"rawContent", "rawContent.rssSource"})
     @Query("SELECT n FROM News n JOIN n.tags tag WHERE tag IN " +
            "(SELECT t FROM News n2 JOIN n2.tags t WHERE n2.id = :newsId) " +
            "AND n.id != :newsId AND n.isPublished = true " +

@@ -1,6 +1,7 @@
 package com.ron.javainfohunter.ai.agent.specialized;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -19,6 +20,7 @@ import java.util.List;
  */
 @Slf4j
 @Component
+@ConditionalOnProperty(prefix = "javainfohunter.ai", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class TrendingCoordinatorAgent extends CoordinatorAgent {
 
     /**

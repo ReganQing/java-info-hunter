@@ -517,4 +517,82 @@ mvnw.cmd clean package -DskipTests
 
 # 运行特定测试
 mvnw.cmd test -Dtest=CoordinatorAgentTest
+
+# 运行特定模块的测试
+mvnw.cmd test -pl javainfohunter-ai-service
 ```
+
+## Database Migrations
+
+**Migration Location**: `javainfohunter-ai-service/src/main/resources/db/migration/`
+
+**Adding New Migrations**:
+1. Create SQL files following Flyway naming: `V{version}__{description}.sql`
+2. Example: `V2__add_user_table.sql`
+3. Use strictly incrementing version numbers (V1, V2, V3...)
+
+**Migration Commands**:
+```bash
+# 查看迁移状态
+mvnw.cmd flyway:info
+
+# 手动执行迁移
+mvnw.cmd flyway:migrate
+
+# 修复迁移状态（仅开发环境）
+mvnw.cmd flyway:repair
+
+# 带环境的迁移
+mvnw.cmd flyway:migrate -Dflyway.configFiles=src/main/resources/application.yml
+```
+
+## Profiles & Configuration
+
+**Available Profiles**:
+- `dev` / `develop` - Local development with debug logging
+- `staging` - Pre-production environment
+- `prod` - Production environment
+
+**Profile-specific files**:
+- `application.yml` - Base configuration
+- `application-dev.yml` / `application-develop.yml` - Development overrides
+- `application-staging.yml` - Staging overrides
+- `application-prod.yml` - Production overrides
+
+**Running with specific profile**:
+```bash
+mvnw.cmd spring-boot:run -pl javainfohunter-api -Dspring-boot.run.profiles=dev
+```
+
+## CI/CD Coverage
+
+The project has a `coverage` profile for aggregate coverage reports (used in CI):
+
+```bash
+# Generate aggregate coverage report across all modules
+mvnw.cmd clean verify -P coverage
+
+# Report location: target/site/jacoco-aggregate/index.html
+```
+
+## Development Notes
+
+**AI Service Module Patterns**:
+- Entities and Repositories are shared across modules via `javainfohunter-ai-service`
+- All database changes must be made in the ai-service module
+- New entities require corresponding Flyway migration scripts
+
+**Testing Structure**:
+- Unit tests: `src/test/java/.../` (module-specific)
+- Integration tests: `src/test/java/.../integration/`
+- E2E tests: `javainfohunter-e2e/src/test/java/`
+
+**Agent Learning Tests**:
+The ai-service module contains stage-based learning tests in `learning/stage/`:
+- `Stage1HelloWorldTest` - Basic agent execution
+- `Stage2WorkQueueTest` - Work queue patterns
+- `Stage3FanoutTest` - Fanout/fan-in patterns
+- `Stage4TopicTest` - Topic-based routing
+- `Stage5ProductionTest` - Production-ready patterns
+
+Use these as reference when implementing new agent patterns.

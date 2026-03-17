@@ -4,6 +4,7 @@ import com.ron.javainfohunter.ai.agent.coordinator.pattern.WorkerResult;
 import com.ron.javainfohunter.ai.agent.core.AgentState;
 import com.ron.javainfohunter.ai.agent.core.BaseAgent;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
  */
 @Slf4j
 @Component
+@ConditionalOnProperty(prefix = "javainfohunter.ai", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class CoordinatorAgent extends BaseAgent {
 
     /**

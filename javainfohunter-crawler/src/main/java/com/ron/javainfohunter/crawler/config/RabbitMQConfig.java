@@ -362,14 +362,8 @@ public class RabbitMQConfig {
         RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
         rabbitTemplate.setMessageConverter(jsonMessageConverter());
 
-        // Enable publisher confirms
-        rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
-            if (ack) {
-                log.debug("Message published successfully to RabbitMQ");
-            } else {
-                log.error("Failed to publish message to RabbitMQ: {}", cause);
-            }
-        });
+        // Note: Publisher confirm callback is configured in ContentPublisher
+        // to properly complete the CompletableFuture for each message
 
         // Enable publisher returns for unroutable messages
         rabbitTemplate.setReturnsCallback(returned -> {

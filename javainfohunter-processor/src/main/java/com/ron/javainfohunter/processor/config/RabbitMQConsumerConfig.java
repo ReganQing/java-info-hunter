@@ -6,6 +6,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.listener.RabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
+import org.springframework.amqp.support.converter.DefaultClassMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -572,11 +573,27 @@ public class RabbitMQConsumerConfig {
      * Uses Jackson for serialization/deserialization of message payloads.
      * Compatible with the crawler module's message format.
      *
+     * Configured to trust packages from all modules for cross-module communication.
+     * Maps crawler's RawContentMessage to processor's RawContentMessage.
+     *
      * @return MessageConverter
      */
     @Bean
     public MessageConverter jsonMessageConverter() {
-        return new Jackson2JsonMessageConverter();
+        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter();
+        // Trust all JavaInfoHunter packages for cross-module message passing
+        DefaultClassMapper classMapper = new DefaultClassMapper();
+        classMapper.setTrustedPackages("*");
+
+        // Map crawler's RawContentMessage to processor's RawContentMessage
+        // This allows deserialization of messages from the crawler module
+        java.util.Map<String, Class<?>> idClassMapping = new java.util.HashMap<>();
+        idClassMapping.put("com.ron.javainfohunter.crawler.dto.RawContentMessage",
+                          com.ron.javainfohunter.processor.dto.RawContentMessage.class);
+        classMapper.setIdClassMapping(idClassMapping);
+
+        converter.setClassMapper(classMapper);
+        return converter;
     }
 
     /**

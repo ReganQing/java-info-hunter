@@ -103,7 +103,6 @@ public class News {
      * Sentiment classification
      */
     @Enumerated(EnumType.STRING)
-    @Size(max = 20, message = "Sentiment must not exceed 20 characters")
     @Column(length = 20)
     private Sentiment sentiment;
 

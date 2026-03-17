@@ -1,4 +1,6 @@
 @echo off
+REM 切换到 UTF-8 代码页以正确显示中文
+chcp 65001 >nul
 REM PostgreSQL 数据库环境设置脚本
 REM 用于 JavaInfoHunter 项目
 

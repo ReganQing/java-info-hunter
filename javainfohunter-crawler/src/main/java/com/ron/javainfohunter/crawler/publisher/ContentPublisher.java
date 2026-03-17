@@ -7,6 +7,7 @@ import com.ron.javainfohunter.crawler.exception.ConfirmTimeoutException;
 import com.ron.javainfohunter.crawler.exception.PublishException;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -83,7 +84,40 @@ public class ContentPublisher {
         this.rabbitTemplate = rabbitTemplate;
         this.crawlerProperties = crawlerProperties;
         this.pendingConfirms = new ConcurrentHashMap<>();
-        // Note: Confirm callback is already configured in RabbitMQConfig
+    }
+
+    /**
+     * Initialize the publisher confirm callback after construction.
+     * This ensures that our callback properly completes the futures in pendingConfirms.
+     */
+    @PostConstruct
+    public void init() {
+        // Set up the confirm callback to complete futures in pendingConfirms
+        rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
+            if (correlationData != null && correlationData.getId() != null) {
+                String correlationId = correlationData.getId();
+                PendingConfirm pendingConfirm = pendingConfirms.get(correlationId);
+                if (pendingConfirm != null) {
+                    if (ack) {
+                        pendingConfirm.getFuture().complete(true);
+                        log.debug("Publisher confirm ACK received for correlationId: {}", correlationId);
+                    } else {
+                        pendingConfirm.getFuture().complete(false);
+                        log.warn("Publisher confirm NACK received for correlationId: {}, cause: {}", correlationId, cause);
+                    }
+                } else {
+                    log.debug("Received confirm for unknown correlationId: {}", correlationId);
+                }
+            } else {
+                if (ack) {
+                    log.debug("Message published successfully to RabbitMQ (no correlation ID)");
+                } else {
+                    log.error("Failed to publish message to RabbitMQ (no correlation ID): {}", cause);
+                }
+            }
+        });
+
+        log.info("ContentPublisher initialized with publisher confirm callback");
     }
 
     /**

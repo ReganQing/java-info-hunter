@@ -192,28 +192,8 @@ public class RssFeedCrawler {
             connection.setRequestProperty("User-Agent", crawlerProperties.getFeed().getUserAgent());
             connection.setRequestProperty("Accept", "application/rss+xml, application/atom+xml, application/xml, text/xml");
 
-            // Connect and check response code
-            connection.connect();
-            int responseCode = connection.getResponseCode();
-
-            if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
-                throw new FeedConnectionException(
-                        "Feed not found (404)",
-                        url,
-                        404,
-                        false
-                );
-            }
-
-            if (responseCode >= 400) {
-                throw new FeedConnectionException(
-                        "HTTP error " + responseCode + " fetching feed",
-                        url,
-                        responseCode
-                );
-            }
-
-            // Parse the feed
+            // Parse the feed - XmlReader handles connection automatically
+            // This avoids the "Already connected" error from setting request properties after connect()
             SyndFeedInput input = new SyndFeedInput();
             SyndFeed feed = input.build(new XmlReader(connection));
 

@@ -1,4 +1,6 @@
 @echo off
+REM 切换到 UTF-8 代码页以正确显示中文
+chcp 65001 >nul
 REM 快速安装脚本 - 使用 Docker 安装 PostgreSQL + pgvector
 REM 最简单的方式，无需编译
 

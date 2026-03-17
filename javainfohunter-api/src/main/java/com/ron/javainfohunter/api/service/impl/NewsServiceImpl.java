@@ -91,7 +91,7 @@ public class NewsServiceImpl implements NewsService {
     @Override
     public NewsResponse getNewsById(Long id) {
         log.debug("Getting news by ID: {}", id);
-        News news = newsRepository.findById(id)
+        News news = newsRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new ResourceNotFoundException("News", id));
         return toResponse(news);
     }
@@ -158,6 +158,17 @@ public class NewsServiceImpl implements NewsService {
      * Convert News entity to NewsResponse DTO
      */
     private NewsResponse toResponse(News news) {
+        // Extract sourceName and url from rawContent if available
+        String sourceName = null;
+        String url = null;
+
+        if (news.getRawContent() != null) {
+            if (news.getRawContent().getRssSource() != null) {
+                sourceName = news.getRawContent().getRssSource().getName();
+            }
+            url = news.getRawContent().getLink();
+        }
+
         return NewsResponse.builder()
                 .id(news.getId())
                 .title(news.getTitle())
@@ -181,6 +192,8 @@ public class NewsServiceImpl implements NewsService {
                 .publishedAt(news.getPublishedAt())
                 .createdAt(news.getCreatedAt())
                 .updatedAt(news.getUpdatedAt())
+                .sourceName(sourceName)
+                .url(url)
                 .build();
     }
 

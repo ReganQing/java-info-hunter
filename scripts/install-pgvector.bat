@@ -1,4 +1,6 @@
 @echo off
+REM 切换到 UTF-8 代码页以正确显示中文
+chcp 65001 >nul
 REM pgvector 扩展编译安装脚本
 REM 注意：需要 Visual Studio Build Tools 和 Git
 
