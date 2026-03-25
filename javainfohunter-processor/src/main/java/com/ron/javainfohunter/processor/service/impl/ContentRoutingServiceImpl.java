@@ -3,8 +3,10 @@ package com.ron.javainfohunter.processor.service.impl;
 import com.ron.javainfohunter.processor.agent.AgentProcessor;
 import com.ron.javainfohunter.processor.config.ProcessorProperties;
 import com.ron.javainfohunter.processor.dto.AgentResult;
-import com.ron.javainfohunter.processor.dto.RawContentMessage;
+import com.ron.javainfohunter.processor.dto.ProcessedContentMessage;
+import com.ron.javainfohunter.dto.RawContentMessage;
 import com.ron.javainfohunter.processor.service.ContentRoutingService;
+import com.ron.javainfohunter.processor.service.ResultAggregator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -56,6 +58,7 @@ public class ContentRoutingServiceImpl implements ContentRoutingService {
 
     private final ProcessorProperties properties;
     private final List<AgentProcessor> agentProcessors;
+    private final ResultAggregator resultAggregator;
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
 
     /**
@@ -131,6 +134,21 @@ public class ContentRoutingServiceImpl implements ContentRoutingService {
                     Thread.sleep(50);
                 }
                 completionFuture.complete(null);
+
+                // Aggregate and store results when all agents complete
+                log.debug("All agents completed for hash={}, starting aggregation", contentHash);
+                resultAggregator.aggregate(contentMessage, results)
+                    .thenCompose(resultAggregator::store)
+                    .whenComplete((v, throwable) -> {
+                        if (throwable != null) {
+                            log.error("Failed to store processed content for hash={}", contentHash, throwable);
+                        } else {
+                            log.info("Successfully stored processed content for hash={}", contentHash);
+                        }
+                        // Clean up results after storing
+                        removeResults(contentHash);
+                    });
+
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
                 completionFuture.completeExceptionally(e);

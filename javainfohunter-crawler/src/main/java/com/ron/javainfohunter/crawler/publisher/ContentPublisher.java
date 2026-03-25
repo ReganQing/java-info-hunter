@@ -2,7 +2,7 @@ package com.ron.javainfohunter.crawler.publisher;
 
 import com.ron.javainfohunter.crawler.config.CrawlerProperties;
 import com.ron.javainfohunter.crawler.config.RabbitMQConfig;
-import com.ron.javainfohunter.crawler.dto.RawContentMessage;
+import com.ron.javainfohunter.dto.RawContentMessage;
 import com.ron.javainfohunter.crawler.exception.ConfirmTimeoutException;
 import com.ron.javainfohunter.crawler.exception.PublishException;
 import jakarta.annotation.PostConstruct;

@@ -8,7 +8,7 @@ import com.rometools.rome.io.SyndFeedInput;
 import com.rometools.rome.io.XmlReader;
 import com.ron.javainfohunter.crawler.config.CrawlerProperties;
 import com.ron.javainfohunter.crawler.dto.CrawlResult;
-import com.ron.javainfohunter.crawler.dto.RawContentMessage;
+import com.ron.javainfohunter.dto.RawContentMessage;
 import com.ron.javainfohunter.crawler.exception.FeedConnectionException;
 import com.ron.javainfohunter.crawler.exception.FeedParseException;
 import com.ron.javainfohunter.entity.RawContent;

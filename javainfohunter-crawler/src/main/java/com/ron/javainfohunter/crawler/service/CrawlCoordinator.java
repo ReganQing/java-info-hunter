@@ -1,7 +1,7 @@
 package com.ron.javainfohunter.crawler.service;
 
 import com.ron.javainfohunter.crawler.dto.CrawlResult;
-import com.ron.javainfohunter.crawler.dto.RawContentMessage;
+import com.ron.javainfohunter.dto.RawContentMessage;
 import com.ron.javainfohunter.entity.RssSource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

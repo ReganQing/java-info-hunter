@@ -1,22 +1,17 @@
 package com.ron.javainfohunter.processor.consumer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
-import com.ron.javainfohunter.processor.dto.RawContentMessage;
-import com.ron.javainfohunter.processor.exception.ConsumerException;
+import com.ron.javainfohunter.dto.RawContentMessage;
 import com.ron.javainfohunter.processor.service.ContentRoutingService;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.amqp.support.AmqpHeaders;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -44,16 +39,27 @@ import java.util.concurrent.atomic.AtomicLong;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(
-    prefix = "javainfohunter.processor",
-    name = "enabled",
-    havingValue = "true",
-    matchIfMissing = true
-)
+// Temporarily disabled to test listener creation
+// @ConditionalOnProperty(
+//     prefix = "javainfohunter.processor",
+//     name = "enabled",
+//     havingValue = "true",
+//     matchIfMissing = true
+// )
 public class RawContentConsumer {
 
     private final ContentRoutingService routingService;
-    private final ObjectMapper objectMapper;
+
+    /**
+     * Log initialization when consumer is created.
+     */
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        log.info("=================================================");
+        log.info("RawContentConsumer COMPONENT CREATED");
+        log.info("@RabbitListener annotation should be processed");
+        log.info("=================================================");
+    }
 
     /**
      * Counter for successfully processed messages.
@@ -83,27 +89,20 @@ public class RawContentConsumer {
      * @throws ConsumerException if message processing fails
      */
     @RabbitListener(
-        queues = "${javainfohunter.processor.queue.input-queue}",
-        containerFactory = "rabbitListenerContainerFactory",
-        ackMode = "MANUAL"
+        queues = "processor.raw.content.queue",
+        containerFactory = "rabbitListenerContainerFactory"
     )
     public void consumeRawContent(
-        byte[] message,
+        RawContentMessage contentMessage,
         Channel channel,
         @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag
     ) {
-        RawContentMessage contentMessage = null;
         String contentHash = "unknown";
 
         try {
-            // Parse JSON to RawContentMessage
-            contentMessage = objectMapper.readValue(
-                new String(message, StandardCharsets.UTF_8),
-                RawContentMessage.class
-            );
-
+            // Message is already deserialized by Spring AMQP
             // Extract content hash for logging and error handling
-            contentHash = contentMessage.getContentHash();
+            contentHash = contentMessage.getContentHash() != null ? contentMessage.getContentHash() : "unknown";
 
             log.debug("Received raw content message: guid={}, contentHash={}, title='{}'",
                 contentMessage.getGuid(),
@@ -123,14 +122,6 @@ public class RawContentConsumer {
                 contentMessage.getGuid(),
                 processed
             );
-
-        } catch (ConsumerException e) {
-            // Business logic exception - nack and reject to DLQ
-            failedCount.incrementAndGet();
-            log.error("Failed to process raw content message (ConsumerException): contentHash={}, error={}",
-                contentHash, e.getMessage(), e);
-
-            rejectMessage(channel, deliveryTag, false);
 
         } catch (Exception e) {
             // Unexpected exception - nack and reject to DLQ

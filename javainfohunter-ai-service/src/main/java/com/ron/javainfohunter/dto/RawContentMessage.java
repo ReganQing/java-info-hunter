@@ -1,4 +1,4 @@
-package com.ron.javainfohunter.processor.dto;
+package com.ron.javainfohunter.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -10,16 +10,20 @@ import java.time.Instant;
 import java.util.Map;
 
 /**
- * Raw content message received from the crawler module.
+ * Shared DTO for raw RSS content messages transmitted via RabbitMQ.
  *
- * <p>This DTO mirrors the crawler module's {@code com.ron.javainfohunter.crawler.dto.RawContentMessage}
- * to ensure compatibility when consuming messages from the crawler.</p>
+ * <p>This message is published by the crawler module and consumed by the processor module.
+ * It contains the raw content extracted from RSS feeds.</p>
  *
  * <p><b>Message Flow:</b></p>
  * <pre>
- * RSS Feed Crawler → Raw Content Queue → Content Processor Consumer
+ * RSS Feed Crawler → RabbitMQ (raw.content queue) → Content Processor
  * </pre>
  *
+ * <p><b>Important:</b> This is a shared DTO between modules. Any changes must be
+ * compatible with both crawler and processor modules.</p>
+ *
+ * @see com.rometools.rome.feed.synd.SyndEntry
  * @author JavaInfoHunter
  * @since 0.0.1-SNAPSHOT
  */
