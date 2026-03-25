@@ -67,25 +67,27 @@
         <dependency>
             <groupId>com.ron</groupId>
             <artifactId>javainfohunter-ai-service</artifactId>
-            <scope>test</scope>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.ron</groupId>
             <artifactId>javainfohunter-api</artifactId>
-            <scope>test</scope>
+            <version>${project.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.ron</groupId>
             <artifactId>javainfohunter-crawler</artifactId>
-            <scope>test</scope>
+            <version>${project.version}</version>
+            <classifier>lib</classifier>
         </dependency>
 
         <dependency>
             <groupId>com.ron</groupId>
             <artifactId>javainfohunter-processor</artifactId>
-            <scope>test</scope>
+            <version>${project.version}</version>
+            <classifier>lib</classifier>
         </dependency>
 
         <!-- PostgreSQL Driver -->
