@@ -2,7 +2,7 @@ package com.ron.javainfohunter.processor.service;
 
 import com.ron.javainfohunter.processor.dto.AgentResult;
 import com.ron.javainfohunter.processor.dto.ProcessedContentMessage;
-import com.ron.javainfohunter.processor.dto.RawContentMessage;
+import com.ron.javainfohunter.dto.RawContentMessage;
 
 import java.util.Map;
 import java.util.concurrent.CompletionStage;

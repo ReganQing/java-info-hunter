@@ -3,7 +3,7 @@ package com.ron.javainfohunter.processor.service.impl;
 import com.ron.javainfohunter.entity.News;
 import com.ron.javainfohunter.processor.dto.AgentResult;
 import com.ron.javainfohunter.processor.dto.ProcessedContentMessage;
-import com.ron.javainfohunter.processor.dto.RawContentMessage;
+import com.ron.javainfohunter.dto.RawContentMessage;
 import com.ron.javainfohunter.processor.service.ResultAggregator;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
