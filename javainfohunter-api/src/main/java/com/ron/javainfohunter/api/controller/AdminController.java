@@ -3,6 +3,8 @@ package com.ron.javainfohunter.api.controller;
 import com.ron.javainfohunter.api.dto.ApiResponse;
 import com.ron.javainfohunter.api.dto.response.AgentStatsResponse;
 import com.ron.javainfohunter.api.dto.response.CrawlTriggerResponse;
+import com.ron.javainfohunter.api.dto.response.ResourceUsageResponse;
+import com.ron.javainfohunter.api.dto.response.SystemMetricsResponse;
 import com.ron.javainfohunter.api.dto.response.SystemStatusResponse;
 import com.ron.javainfohunter.api.service.AgentService;
 import com.ron.javainfohunter.api.service.NewsService;
@@ -19,7 +21,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -106,6 +110,79 @@ public class AdminController {
         }
     }
 
+    @PostMapping("/crawl-by-category")
+    @Operation(summary = "Trigger category crawl", description = "Trigger crawl for all RSS sources in a specific category")
+    public ResponseEntity<ApiResponse<CrawlTriggerResponse>> triggerCategoryCrawl(
+            @RequestBody Map<String, String> request) {
+
+        String category = request.get("category");
+        if (category == null || category.trim().isEmpty()) {
+            return ResponseEntity.badRequest()
+                    .body(ApiResponse.error("Category parameter is required"));
+        }
+
+        log.info("Triggering crawl for category: {}", category);
+
+        try {
+            int sourcesTriggered = 0;
+            List<String> taskIdList = new ArrayList<>();
+            List<String> errors = new ArrayList<>();
+
+            // Get all sources for the specified category
+            Pageable pageable = PageRequest.of(0, MAX_BATCH_SIZE);
+            Page<com.ron.javainfohunter.api.dto.response.RssSourceResponse> categorySources =
+                    rssSourceService.getSources(category, null, pageable);
+
+            for (com.ron.javainfohunter.api.dto.response.RssSourceResponse source : categorySources.getContent()) {
+                try {
+                    Map<String, Object> result = rssSourceService.triggerCrawl(source.getId());
+                    if (result.containsKey("taskId") && result.get("taskId") != null) {
+                        taskIdList.add(result.get("taskId").toString());
+                        sourcesTriggered++;
+                    }
+                } catch (Exception e) {
+                    String errorMsg = String.format("Failed to trigger crawl for source %s: %s",
+                            source.getName(), e.getMessage());
+                    log.warn(errorMsg);
+                    errors.add(errorMsg);
+                }
+            }
+
+            String taskIds = String.join(",", taskIdList);
+            String message;
+            if (errors.isEmpty()) {
+                message = String.format("Triggered crawl for %d sources in category '%s'",
+                        sourcesTriggered, category);
+            } else {
+                message = String.format("Triggered crawl for %d sources in category '%s' (%d errors)",
+                        sourcesTriggered, category, errors.size());
+            }
+
+            CrawlTriggerResponse response = CrawlTriggerResponse.builder()
+                    .triggered(sourcesTriggered > 0)
+                    .message(message)
+                    .sourcesTriggered(sourcesTriggered)
+                    .triggeredAt(Instant.now())
+                    .taskIds(taskIds)
+                    .estimatedArticles(sourcesTriggered * 10)
+                    .build();
+
+            return ResponseEntity.ok(ApiResponse.success(response, message));
+
+        } catch (Exception e) {
+            log.error("Failed to trigger category crawl", e);
+
+            CrawlTriggerResponse response = CrawlTriggerResponse.builder()
+                    .triggered(false)
+                    .message("Failed to trigger category crawl: " + e.getMessage())
+                    .sourcesTriggered(0)
+                    .triggeredAt(Instant.now())
+                    .build();
+
+            return ResponseEntity.ok(ApiResponse.success(response));
+        }
+    }
+
     @PostMapping("/crawl/{sourceId}")
     @Operation(summary = "Trigger single source crawl", description = "Trigger crawl for a specific RSS source")
     public ResponseEntity<ApiResponse<CrawlTriggerResponse>> triggerSourceCrawl(
@@ -131,7 +208,7 @@ public class AdminController {
     @GetMapping("/status")
     @Operation(summary = "Get system status", description = "Get overall system health and status")
     public ResponseEntity<ApiResponse<SystemStatusResponse>> getSystemStatus() {
-        log.debug("Getting system status");
+        log.info("Getting system status");
 
         // Get counts
         Pageable pageable = PageRequest.of(0, 1);
@@ -186,5 +263,34 @@ public class AdminController {
                 .build();
 
         return ResponseEntity.ok(ApiResponse.success(systemStatus));
+    }
+
+    @GetMapping("/resources")
+    @Operation(summary = "Get system resources", description = "Get current system resource usage")
+    public ResponseEntity<ApiResponse<ResourceUsageResponse>> getResources() {
+        Runtime runtime = Runtime.getRuntime();
+
+        ResourceUsageResponse response = ResourceUsageResponse.builder()
+                .memoryUsed(runtime.totalMemory() - runtime.freeMemory())
+                .memoryTotal(runtime.totalMemory())
+                .diskUsed(0L)  // Not available in standard Java API
+                .diskTotal(0L) // Not available in standard Java API
+                .cpuPercent(0.0) // Not available in standard Java API
+                .build();
+
+        return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @GetMapping("/metrics")
+    @Operation(summary = "Get system metrics", description = "Get system performance metrics")
+    public ResponseEntity<ApiResponse<SystemMetricsResponse>> getMetrics() {
+        SystemMetricsResponse response = SystemMetricsResponse.builder()
+                .uptime(System.currentTimeMillis() / 1000)
+                .activeConnections(0)
+                .requestRate(List.of())
+                .errorRate(List.of())
+                .build();
+
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
