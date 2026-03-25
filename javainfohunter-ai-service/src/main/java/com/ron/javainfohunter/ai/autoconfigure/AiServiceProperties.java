@@ -44,6 +44,11 @@ public class AiServiceProperties {
     private Tool tool = new Tool();
 
     /**
+     * DashScope 配置
+     */
+    private DashScope dashscope = new DashScope();
+
+    /**
      * Agent 配置
      */
     @Data
@@ -74,5 +79,19 @@ public class AiServiceProperties {
          * </p>
          */
         private boolean autoDiscovery = true;
+    }
+
+    /**
+     * DashScope 配置
+     */
+    @Data
+    public static class DashScope {
+        /**
+         * 是否启用 DashScope AI 功能
+         * <p>
+         * 即使设置了 API Key，也可以通过此开关禁用 AI 功能
+         * </p>
+         */
+        private boolean enabled = true;
     }
 }

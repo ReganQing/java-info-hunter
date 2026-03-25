@@ -7,7 +7,7 @@ import com.ron.javainfohunter.ai.agent.core.BaseAgent;
 import com.ron.javainfohunter.processor.agent.AgentProcessor;
 import com.ron.javainfohunter.processor.config.ProcessorProperties;
 import com.ron.javainfohunter.processor.dto.AgentResult;
-import com.ron.javainfohunter.processor.dto.RawContentMessage;
+import com.ron.javainfohunter.dto.RawContentMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -82,8 +82,8 @@ public class AnalysisAgentProcessor implements AgentProcessor {
             BaseAgent agent = agentOpt.get();
             log.debug("Executing analysis agent for content hash={}", content.getContentHash());
 
-            // Execute the agent
-            String response = agent.run(prompt);
+            // Execute the agent using thread-safe concurrent method
+            String response = agent.runConcurrent(prompt);
 
             // Parse response
             Map<String, Object> result = parseAnalysisResponse(response);

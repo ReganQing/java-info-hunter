@@ -83,7 +83,41 @@ public abstract class BaseAgent {
     private final AtomicBoolean cancelled = new AtomicBoolean(false);
 
     /**
-     * 执行任务
+     * 执行任务（线程安全版本，用于并发调用）
+     * <p>
+     * 此方法不修改 Agent 的共享状态，适合在多线程环境中调用。
+     * 每次调用都使用独立的局部状态，确保线程安全。
+     * </p>
+     *
+     * @param userPrompt 用户输入
+     * @return 执行结果
+     */
+    public String runConcurrent(String userPrompt) {
+        if (userPrompt == null || userPrompt.isBlank()) {
+            throw new IllegalArgumentException("User prompt cannot be empty");
+        }
+
+        log.debug("Agent {} executing concurrent request", name);
+
+        // 创建独立的消息列表用于本次执行
+        List<Message> localMessages = new ArrayList<>();
+        localMessages.add(new UserMessage(userPrompt));
+
+        // 执行单步（大多数 Agent 只需要一步）
+        String result;
+        try {
+            result = executeStep(userPrompt);
+        } catch (Exception e) {
+            log.error("Agent {} error in concurrent execution", name, e);
+            result = "Error: " + e.getMessage();
+        }
+
+        log.debug("Agent {} concurrent execution completed", name);
+        return result;
+    }
+
+    /**
+     * 执行任务（原始方法，用于单线程调用）
      *
      * @param userPrompt 用户输入
      * @return 执行结果
@@ -190,11 +224,26 @@ public abstract class BaseAgent {
     }
 
     /**
-     * 执行单个步骤（子类实现）
+     * 执行单个步骤（子类实现，用于原始 run 方法）
      *
      * @return 步骤结果
      */
     public abstract String step();
+
+    /**
+     * 执行步骤（子类实现，用于 runConcurrent 方法）
+     * <p>
+     * 默认实现调用 step() 方法。子类可以重写此方法以优化并发性能。
+     * </p>
+     *
+     * @param userPrompt 用户提示
+     * @return 执行结果
+     */
+    public String executeStep(String userPrompt) {
+        // 默认实现：先添加消息，然后执行 step
+        messages.add(new UserMessage(userPrompt));
+        return step();
+    }
 
     /**
      * 清理资源（子类实现）

@@ -43,15 +43,17 @@ import org.springframework.context.annotation.Bean;
 @Slf4j
 @AutoConfiguration
 @EnableConfigurationProperties(AiServiceProperties.class)
-@ConditionalOnProperty(prefix = "javainfohunter.ai", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "javainfohunter.ai", name = "enabled", havingValue = "true", matchIfMissing = false)
 public class AiServiceAutoConfiguration {
 
     /**
      * 配置 ChatClient
+     * 只有当 ChatModel 可用时才创建
      */
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnClass(ChatModel.class)
+    @ConditionalOnProperty(prefix = "spring.ai.dashscope", name = "api-key")
     public ChatClient chatClient(ChatModel chatModel) {
         log.info("Initializing ChatClient with model: {}", chatModel.getClass().getSimpleName());
         return ChatClient.builder(chatModel).build();
@@ -99,10 +101,12 @@ public class AiServiceAutoConfiguration {
 
     /**
      * 配置 ChatService（可选）
+     * 只有当 ChatClient 可用时才创建
      */
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnClass(ChatModel.class)
+    @ConditionalOnProperty(prefix = "spring.ai.dashscope", name = "api-key")
     public ChatService chatService(ChatClient chatClient) {
         log.info("Initializing ChatService");
         return new ChatService(chatClient);
@@ -110,10 +114,12 @@ public class AiServiceAutoConfiguration {
 
     /**
      * 配置 EmbeddingService（可选）
+     * 只有当 EmbeddingModel 可用时才创建
      */
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnClass(org.springframework.ai.embedding.EmbeddingModel.class)
+    @ConditionalOnProperty(prefix = "spring.ai.dashscope", name = "api-key")
     public EmbeddingService embeddingService(EmbeddingModel embeddingModel) {
         log.info("Initializing EmbeddingService");
         return new EmbeddingService(embeddingModel);
@@ -121,10 +127,12 @@ public class AiServiceAutoConfiguration {
 
     /**
      * 配置 AgentService（可选）
+     * 只有当 ChatModel 可用时才创建
      */
     @Bean
     @ConditionalOnMissingBean
     @ConditionalOnClass(ChatModel.class)
+    @ConditionalOnProperty(prefix = "spring.ai.dashscope", name = "api-key")
     public AgentService agentService(TaskCoordinator taskCoordinator, AgentManager agentManager) {
         log.info("Initializing AgentService");
         return new AgentService(taskCoordinator, agentManager);
