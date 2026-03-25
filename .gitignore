@@ -74,3 +74,9 @@ application-production-test.yml
 
 ### Temporary Scripts ###
 scripts/.claude/
+
+### Temporary Test Files ###
+test-*.py
+test-*.sh
+test-*.bat
+TestDbQuery.*

@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<opml xmlns:frss="https://freshrss.org/opml" version="2.0">
+  <head>
+    <title>FreshRSS</title>
+    <dateCreated>Thu, 06 Nov 2025 15:53:38 +0800</dateCreated>
+  </head>
+  <body>
+    <outline text="AI相关">
+      <outline text="AI 开发者日报" type="rss" xmlUrl="https://ainews.liduos.com/rss.xml" htmlUrl="https://ainews.liduos.com/" description="专为中文开发者打造的 AI 技术日报，每日更新，提供文章和播客双重形式，用通俗语言解读前沿技术。&#13;&#10; 汇总 AI 开发领域的 X、Reddit 和 Discord 社区讨论，精选开发者值得关注的信息，支持 RSS 和邮件订阅。"/>
+      <outline text="Founder Park" type="rss" xmlUrl="https://wechat2rss.bestblogs.dev/feed/f940695505f2be1399d23cc98182297cadf6f90d.xml" htmlUrl="https://wechat2rss.bestblogs.dev/feed/f940695505f2be1399d23cc98182297cadf6f90d.xml" description="来自极客公园，专注与科技创业者聊「真问题」。&#13;&#10;(wechat feed made by @ttttmr https://wechat2rss.xlab.app)"/>
+      <outline text="Jina AI" type="rss" xmlUrl="https://jina.ai/feed.rss" htmlUrl="https://jina.ai/news" description="Please visit https://jina.ai"/>
+      <outline text="Last Week in AI" type="rss" xmlUrl="https://lastweekin.ai/feed" htmlUrl="https://lastweekin.ai/" description="Weekly text and audio summaries of the most interesting AI news, as well as editorials commenting on recent events"/>
+      <outline text="Latent Space" type="rss" xmlUrl="https://www.latent.space/feed" htmlUrl="https://www.latent.space/" description="The AI Engineer newsletter + Top 10 US Tech podcast. Exploring AI UX, Agents, Devtools, Infra, Open Source Models. See https://latent.space/about for highlights from Chris Lattner, Andrej Karpathy, George Hotz, Simon Willison, Soumith Chintala et al!"/>
+      <outline text="The Batch | DeepLearning.AI | AI News &amp; Insights" type="rss" xmlUrl="https://rsshub.bestblogs.dev/deeplearning/the-batch" htmlUrl="https://www.deeplearning.ai/the-batch/" description="Weekly AI news for engineers, executives, and enthusiasts. - Powered by RSSHub"/>
+      <outline text="Turing Post" type="rss" xmlUrl="https://rss.beehiiv.com/feeds/UJIoBuf5BX.xml" htmlUrl="https://www.turingpost.com/" description="Turing Post is here to help you stay on top of AI – connecting the dots between research, key concepts, and the technologies shaping the industry. It’s about knowing what’s out there to build on, understanding the most successful businesses, and making sense of the big ideas driving ML forward. Join 85,000+ professionals from top AI labs, ML startups, and enterprises who rely on Turing Post to stay ahead in this evolving landscape"/>
+      <outline text="宝玉的分享" type="rss" xmlUrl="https://s.baoyu.io/feed.xml" htmlUrl="https://baoyu.io/" description="宝玉的分享，主要在大语言模型、Prompt Engineering、软件工程、工程管理、前端等领域。"/>
+      <outline text="新智元" type="rss" xmlUrl="https://wechat2rss.bestblogs.dev/feed/e531a18b21c34cf787b83ab444eef659d7a980de.xml" htmlUrl="https://wechat2rss.bestblogs.dev/feed/e531a18b21c34cf787b83ab444eef659d7a980de.xml" description="智能+中国主平台，致力于推动中国从互联网+迈向智能+新纪元。重点关注人工智能、机器人等前沿领域发展，关注人机融合、人工智能和机器人革命对人类社会与文明进化的影响，领航中国新智能时代。"/>
+      <outline text="机器之心" type="rss" xmlUrl="https://wechat2rss.bestblogs.dev/feed/8d97af31b0de9e48da74558af128a4673d78c9a3.xml" htmlUrl="https://wechat2rss.bestblogs.dev/feed/8d97af31b0de9e48da74558af128a4673d78c9a3.xml" description="专业的人工智能媒体和产业服务平台"/>
+      <outline text="量子位" type="rss" xmlUrl="https://www.qbitai.com/feed" htmlUrl="https://www.qbitai.com/" description="追踪人工智能新趋势，报道科技行业新突破"/>
+    </outline>
+    <outline text="个人博客">
+      <outline text="&lt;antirez&gt;" type="rss" xmlUrl="https://antirez.com/rss" htmlUrl="http://antirez.com/" description="Description pending"/>
+      <outline text="Andy Stewart" type="rss" xmlUrl="https://manateelazycat.github.io/feed.xml" htmlUrl="https://manateelazycat.github.io/" description="My personal blog"/>
+      <outline text="blog.jsbarretto.com" type="rss" xmlUrl="https://blog.jsbarretto.com/rss.xml" htmlUrl="https://blog.jsbarretto.com/" description="Joshua Barretto's Blog"/>
+      <outline text="Blog | Phodal - A Growth Engineer" type="rss" xmlUrl="https://www.phodal.com/blog/feeds/rss/#/" htmlUrl="http://www.phodal.com/blog/" description="Blog"/>
+      <outline text="Brendan Gregg's Blog" type="rss" xmlUrl="https://www.brendangregg.com/blog/rss.xml" htmlUrl="http://www.brendangregg.com/blog"/>
+      <outline text="CatCoding" type="rss" xmlUrl="https://catcoding.me/atom.xml" htmlUrl="http://catcoding.me/"/>
+      <outline text="Coding Horror" type="rss" xmlUrl="https://blog.codinghorror.com/rss/#/" htmlUrl="https://blog.codinghorror.com/" description="programming and human factors"/>
+      <outline text="Joel on Software" type="rss" xmlUrl="https://www.joelonsoftware.com/feed/" htmlUrl="https://www.joelonsoftware.com/"/>
+      <outline text="Matt Might's blog" type="rss" xmlUrl="https://matt.might.net/articles/feed.rss" htmlUrl="http://matt.might.net/" description="Matt Might's blog"/>
+      <outline text="Simon Willison's Weblog" type="rss" xmlUrl="https://simonwillison.net/atom/everything/" htmlUrl="http://simonwillison.net/"/>
+      <outline text="码农真经的博客" type="rss" xmlUrl="https://blog.mzh.ren/zh/index.xml" htmlUrl="https://blog.mzh.ren/zh/" description="Recent content on 码农真经的博客"/>
+      <outline text="老苏的blog" type="rss" xmlUrl="https://laosu.tech/atom.xml" htmlUrl="https://laosu.tech/" description="聚沙成塔，集腋成裘"/>
+      <outline text="肖恩聊技术" type="rss" xmlUrl="https://shawnxie.top/rss.xml" htmlUrl="https://shawnxie.top/" description="持续提供有价值的技术内容"/>
+      <outline text="軟體考古學家" type="rss" xmlUrl="https://blog.brachiosoft.com/index.xml" htmlUrl="https://blog.brachiosoft.com/" description="Recent content on 軟體考古學家"/>
+    </outline>
+    <outline text="技术博客">
+      <outline text="AWS Architecture Blog" type="rss" xmlUrl="https://aws.amazon.com/blogs/architecture/feed/" htmlUrl="https://aws.amazon.com/blogs/architecture/" description="Just another Amazon Web Services site"/>
+      <outline text="AWS Machine Learning Blog" type="rss" xmlUrl="https://aws.amazon.com/blogs/machine-learning/feed/" htmlUrl="https://aws.amazon.com/blogs/machine-learning/" description="Official Machine Learning Blog of Amazon Web Services"/>
+      <outline text="Blog on LlamaIndex" type="rss" xmlUrl="https://www.llamaindex.ai/blog/feed" htmlUrl="https://www.llamaindex.ai/blog/" description="Recent blog posts from LlamaIndex"/>
+      <outline text="ByteByteGo Newsletter" type="rss" xmlUrl="https://blog.bytebytego.com/feed" htmlUrl="https://blog.bytebytego.com/" description="Explain complex systems with simple terms, from the authors of the best-selling system design book series. Join over 1,000,000 friendly readers."/>
+      <outline text="Coding Horror" type="rss" xmlUrl="https://blog.codinghorror.com/rss/" htmlUrl="https://blog.codinghorror.com/" description="programming and human factors"/>
+      <outline text="Docker" type="rss" xmlUrl="https://www.docker.com/feed/" htmlUrl="https://www.docker.com/"/>
+      <outline text="Engineering at Meta" type="rss" xmlUrl="https://engineering.fb.com/feed/" htmlUrl="https://engineering.fb.com/" description="Engineering at Meta Blog"/>
+      <outline text="Engineering at Slack" type="rss" xmlUrl="https://slack.engineering/feed/" htmlUrl="https://slack.engineering/" description="Hear directly from Slack's engineers about what we build, why and how we build it, and how you can use it."/>
+      <outline text="engineering on Grafana Labs" type="rss" xmlUrl="https://grafana.com/categories/engineering/index.xml" htmlUrl="https://grafana.com/categories/engineering/" description="Recent content in Engineering on Grafana Labs"/>
+      <outline text="freeCodeCamp Programming Tutorials: Python, JavaScript, Git &amp; More" type="rss" xmlUrl="https://www.freecodecamp.org/news/rss/" htmlUrl="https://www.freecodecamp.org/news/" description="Browse thousands of programming tutorials written by experts. Learn Web Development, Data Science, DevOps, Security, and get developer career advice."/>
+      <outline text="Hugging Face - Blog" type="rss" xmlUrl="https://huggingface.co/blog/feed.xml" htmlUrl="https://huggingface.co/blog" description="The Hugging Face blog"/>
+      <outline text="IntelliJ IDEA : IntelliJ IDEA – the Leading Java and Kotlin IDE, by JetBrains | The JetBrains Blog" type="rss" xmlUrl="https://blog.jetbrains.com/idea/feed" htmlUrl="https://blog.jetbrains.com/" description="Developer Tools for Professionals and Teams"/>
+      <outline text="Java Code Geeks" type="rss" xmlUrl="http://feeds.feedburner.com/JavaCodeGeeks" htmlUrl="https://www.javacodegeeks.com/" description="Java 2 Java Developers Resource Center"/>
+      <outline text="LangChain Blog" type="rss" xmlUrl="https://blog.langchain.com/rss/" htmlUrl="https://blog.langchain.dev/" description="LangChain Blog"/>
+      <outline text="Martin Fowler" type="rss" xmlUrl="https://martinfowler.com/feed.atom" htmlUrl="https://martinfowler.com/" description="Master feed of news and updates from martinfowler.com"/>
+      <outline text="Microservice architecture" type="rss" xmlUrl="https://microservices.io/feed.xml" htmlUrl="http://microservices.io/" description="A pattern language for microservices"/>
+      <outline text="Microsoft Azure Blog" type="rss" xmlUrl="https://azure.microsoft.com/en-us/blog/feed/" htmlUrl="https://azure.microsoft.com/en-us/blog/" description="Get the latest Azure news, updates, and announcements from the Azure blog. From product updates to hot topics, hear from the Azure experts."/>
+      <outline text="Microsoft Research Blog - Microsoft Research" type="rss" xmlUrl="https://www.microsoft.com/en-us/research/blog/feed/?from=https%3A%2F%2Fresearch.microsoft.com%2Frss%2Fnews.xml&amp;type=rss" htmlUrl="https://www.microsoft.com/en-us/research/blog/"/>
+      <outline text="Netflix TechBlog - Medium" type="rss" xmlUrl="https://netflixtechblog.com/feed" htmlUrl="https://netflixtechblog.com?source=rss----2615bd06b42e---4/" description="Learn about Netflix’s world class engineering efforts, company culture, product developments and more. - Medium"/>
+      <outline text="Redis" type="rss" xmlUrl="https://redis.io/feed/" htmlUrl="https://redis.io/"/>
+      <outline text="Sagyam's Blog" type="rss" xmlUrl="https://blog.sagyamthapa.com.np/rss.xml#/" htmlUrl="https://blog.sagyamthapa.com.np/" description="Sagyam's Blog"/>
+      <outline text="Spring" type="rss" xmlUrl="https://spring.io/blog.atom" htmlUrl="https://spring.io/" description="Level up your Java code and explore what Spring can do for you."/>
+      <outline text="Stack Overflow Blog" type="rss" xmlUrl="http://blog.stackoverflow.com/feed/" htmlUrl="https://stackoverflow.blog/" description="Essays, opinions, and advice on the act of computer programming from Stack Overflow."/>
+      <outline text="The Apache Software Foundation Blog" type="rss" xmlUrl="https://news.apache.org/feed" htmlUrl="https://news.apache.org/" description="The Apache Software Foundation Blog"/>
+      <outline text="The Cloudflare Blog" type="rss" xmlUrl="https://blog.cloudflare.com/rss" htmlUrl="https://blog.cloudflare.com/" description="Get the latest news on how products at Cloudflare are built, technologies used, and join the teams helping to build a better Internet."/>
+      <outline text="The GitHub Blog" type="rss" xmlUrl="https://github.blog/feed/" htmlUrl="https://github.blog/" description="Updates, ideas, and inspiration from GitHub to help developers build and design software."/>
+      <outline text="The New Stack" type="rss" xmlUrl="https://thenewstack.io/feed/" htmlUrl="https://thenewstack.io/"/>
+      <outline text="Uber Engineering Blog" type="rss" xmlUrl="https://www.uber.com/blog/engineering/rss/" htmlUrl="https://www.uber.com/blog/engineering"/>
+      <outline text="美团技术团队" type="rss" xmlUrl="https://tech.meituan.com/feed/" htmlUrl="https://tech.meituan.com/feed/" description="美团技术团队最近更新内容。"/>
+    </outline>
+    <outline text="技术周刊">
+      <outline text="1Link.Fun 科技周刊" type="rss" xmlUrl="https://techhub.social/users/1link.rss" htmlUrl="https://xiaobot.net/p/1link?refer=cd147f62-e3cc-4dd4-8cde-fb2ed1f1be40" description="&lt;p&gt;每天获取一条&lt;strong&gt;&lt;u&gt;高质量&lt;/u&gt;&lt;/strong&gt;的链接(科技 / 科学 / 网站 / 工具...), 欢迎访问!&lt;/p&gt;&lt;p&gt;欢迎移步 &lt;a href=&quot;https://www.xiaobot.net/p/1link?refer=cd147f62-e3cc-4dd4-8cde-fb2ed1f1be40&quot; rel=&quot;noopener noreferrer&quot; target=&quot;_blank&quot;&gt;小报童&lt;/a&gt; 专栏订阅周刊版本表达支持, 每周获取 10 个链接.&lt;/p&gt;&lt;p&gt;也欢迎关注公众号 &lt;strong&gt;521link &lt;/strong&gt;同步获取内容, 同时开放公众号私信投稿渠道&lt;/p&gt;&lt;p&gt;点击这里访问 1 - 119 期周刊内容的&lt;a href=&quot;https://archive.1link.fun/&quot; rel=&quot;noopener noreferrer&quot; target=&quot;_blank&quot;&gt;站点归档&lt;/a&gt;.&lt;/p&gt;&lt;p&gt;&lt;br&gt;&lt;/p&gt;&lt;p&gt;下面是我的一些作品:&lt;/p&gt;&lt;ul&gt;&lt;li&gt;&lt;a href=&quot;https://ouo.io/A4iiVy&quot; rel=&quot;noopener noreferrer&quot; target=&quot;_blank&quot;&gt;舒尔特方格&lt;/a&gt; - 专注力训练游戏&lt;/li&gt;&lt;li&gt;&lt;a href=&quot;https://ouo.io/mGbFIP&quot; rel=&quot;noopener noreferrer&quot; target=&quot;_blank&quot;&gt;舒尔特方格 26 个字母版&lt;/a&gt; - 适合宝宝认字母游戏&lt;/li&gt;&lt;li&gt;&lt;a href=&quot;https://qwerty-game.1link.fun/&quot; rel=&quot;noopener noreferrer&quot; target=&quot;_blank&quot;&gt;舒尔特方格 26 个字母 + QWERTY 键盘布局版&lt;/a&gt; - 认字母的同时熟悉 QWERTY 键盘布局&lt;/li&gt;&lt;li&gt;&lt;a href=&quot;https://ouo.io/jdgpvG&quot; rel=&quot;noopener noreferrer&quot; target=&quot;_blank&quot;&gt;Exif viewer&lt;/a&gt; - 在线查看图片的 Exif 信息&lt;/li&gt;&lt;li&gt;&lt;a href=&quot;https://ouo.io/F1Rmqh&quot; rel=&quot;noopener noreferrer&quot; target=&quot;_blank&quot;&gt;Lucky You&lt;/a&gt; - 图片抽奖助手 (基于 Tauri v2), 还有一个 &lt;a href=&quot;https://ouo.io/1NkgUu&quot; rel=&quot;noopener noreferrer&quot; target=&quot;_blank&quot;&gt;PWA 版本&lt;/a&gt;&lt;/li&gt;&lt;li&gt;&lt;a href=&quot;https://ouo.io/xnI398W&quot; rel=&quot;noopener noreferrer&quot; target=&quot;_blank&quot;&gt;猜成语游戏&lt;/a&gt; - 按拼音顺序猜中目标成语&lt;/li&gt;&lt;li&gt;&lt;a href=&quot;https://ouo.io/q42R2&quot; rel=&quot;noopener noreferrer&quot; target=&quot;_blank&quot;&gt;猜英语四六级单词游戏&lt;/a&gt; - 按字母顺序猜中目标单词, 英语四六级词汇表&lt;/li&gt;&lt;li&gt;&lt;a href=&quot;https://ouo.io/ja2DakC&quot; rel=&quot;noopener noreferrer&quot; target=&quot;_blank&quot;&gt;猜GRE单词游戏&lt;/a&gt; - 按字母顺序猜中目标单词, GRE 词汇表&lt;/li&gt;&lt;li&gt;&lt;a href=&quot;https://ouo.io/5mPS6k&quot; rel=&quot;noopener noreferrer&quot; target=&quot;_blank&quot;&gt;宝宝爱跑步&lt;/a&gt; - 摄像头跑步姿态识别跑步游戏 (还有&lt;a href=&quot;https://ouo.io/FNZ867&quot; rel=&quot;noopener noreferrer&quot; target=&quot;_blank&quot;&gt;汪汪队版本&lt;/a&gt;)&lt;/li&gt;&lt;/ul&gt;"/>
+      <outline text="54321 Weekly" type="rss" xmlUrl="https://54321.versun.me/feed/" htmlUrl="https://versun.me/54321-weekly" description="每周六分享科技趣闻"/>
+      <outline text="AIGC Weekly" type="rss" xmlUrl="https://quaily.com/op7418/feed/atom" htmlUrl="https://quaily.com/op7418/feed/atom" description="feedId:41795937307751551+userId:42030064782947328&#10;&#10;如果你是AI从业人员或者想加入AI领域工作，这个周刊非常适合你。&#10;&#10;从ChatGPT发布的那周开始更新稳定运营两年，口碑和品质保证，很多看周刊长大的朋友都已经在行业站稳脚跟。&#10;&#10;免费订阅也可以获得日常内容更新，如果是付费会员可以获得：&#10;&#10;订阅后可以获得，一份不只有新闻资讯的AIGC周刊：&#10;1️⃣记录上周值得关注的AI领域主要发布；&#10;2️⃣核心从业者需要关注的AI动态（融资、产品迭代、优质视觉创作）；&#10;3️⃣涉及各个AI领域的优质内容（LLM、图像视频、声音、具身智能）；&#10;4️⃣过去一周最重要的研究论文和简短解读介绍。&#10;&#10;最重要的的：还可以加入核心粉丝群获得最及时的AI资讯通知和优先工作撮合机会。&#10;单次买断一年更新，周刊本身每年200元订阅费用。&#10;&#10;作者歸藏：AI产品、AI艺术家、AI图像及视频专家、多家AI产品顾问、丰富的AI产品实践经验。"/>
+      <outline text="Better Dev Link" type="rss" xmlUrl="https://betterdev.link/rss.xml" htmlUrl="https://betterdev.link/" description="Better Dev Link - Resource around the web on becoming a better programmer, published every Monday and sent directly to your inbox."/>
+      <outline text="HelloGitHub 月刊" type="rss" xmlUrl="https://hellogithub.com/rss" htmlUrl="https://hellogithub.com/" description="HelloGitHub 是一个分享有趣、 入门级开源项目的平台。 希望大家能够在这里找到编程的快乐、 轻松搞定问题的技术方案、 大呼过瘾的开源神器， 顺其自然地开启开源之旅。"/>
+      <outline text="不死鸟 - 分享为王官网" type="rss" xmlUrl="https://iui.su/feed/" htmlUrl="https://iui.su/" description="不死鸟:专注分享优质资源"/>
+      <outline text="二丫讲梵-学习周刊" type="rss" xmlUrl="https://wiki.eryajf.net/rss.xml" htmlUrl="https://wiki.eryajf.net/learning-weekly/" description="这里记录我每周工作学习过程中遇到学到的优秀开源项目，优秀文章，以及优秀博客。有很多优秀的内容，都值得被铭记，值得被分享，值得被更多人学习，周刊想通过这里每周的记录分享，一方面强化自己对优秀内容的认识与学习，另一方面能够把优质内容统一汇总，以飨大众。&#13;&#10;&#13;&#10;&#9;&#9;周刊的内容会以运维技术和 Golang 为主，以及 GitHub 上优秀项目或经验。已经经过一次筛选过滤的内容，质量不会太差，在你空闲无事的时候，可以过来随便看看，必能有所收益。&#13;&#10;&#13;&#10;&#9;&#9;周刊维护在：https://github.com/eryajf/learning-weekly 欢迎投稿，推荐或自荐项目 /文章 /博客，请提交 issue 。"/>
+      <outline text="大橘和朋友们的周刊" type="rss" xmlUrl="https://rrorangeandfriends.de/feed.xml" htmlUrl="https://rrorangeandfriends.de" description="《大橘和朋友们的周刊》：分享日常冲浪互联网看到好玩的网站、app应用、资源分享、效率软件工具集等"/>
+      <outline text="月球背面" type="rss" xmlUrl="https://moonvy.com/blog/rss.xml" htmlUrl="https://moonvy.com/blog" description="月维的创造者们对「设计」和「开发」的思考与讨论"/>
+      <outline text="潮流周刊" type="rss" xmlUrl="https://weekly.tw93.fun/rss.xml" htmlUrl="https://weekly.tw93.fun/" description="记录工程师 Tw93 的不枯燥生活"/>
+      <outline text="粥里有勺糖" type="rss" xmlUrl="https://sugarat.top/feed.rss" htmlUrl="https://sugarat.top/" description="你的指尖,拥有改变世界的力量（大前端相关技术分享）"/>
+      <outline text="老胡的周刊" type="rss" xmlUrl="https://weekly.howie6879.com/rss/rss.xml" htmlUrl="https://weekly.howie6879.com/" description="老胡的信息周刊，每周记录我看到的有价值的信息，主要针对计算机领域，内容主题极大程度被我个人喜好主导。这个项目核心目的在于记录让自己有印象的信息做一个留存以及共享。（feedId:41477724771147777+userId:66667360730893312）"/>
+      <outline text="肖恩技术周刊" type="rss" xmlUrl="https://weekly.shawnxie.top/rss.xml" htmlUrl="https://weekly.shawnxie.top/" description="feedId:106642906166709248+userId:73601809993285632"/>
+      <outline text="让小产品的独立变现更简单 - ezindie.com" type="rss" xmlUrl="https://www.ezindie.com/feed/rss.xml" htmlUrl="http://github.com/dylang/node-rss" description="让技术变现，做可持续盈利的产品"/>
+      <outline text="豌豆花下猫" type="rss" xmlUrl="https://pythoncat.top/rss.xml" htmlUrl="https://pythoncat.top/" description="Python编程、生活随笔、个人作品，公众号“Python猫”"/>
+      <outline text="阮一峰的网络日志" type="rss" xmlUrl="https://www.ruanyifeng.com/blog/atom.xml" htmlUrl="http://www.ruanyifeng.com/blog/" description="Ruan YiFeng's Blog"/>
+      <outline text="阿猫的博客" type="rss" xmlUrl="https://ameow.xyz/feed.xml" htmlUrl="https://ameow.xyz/" description="Code for fun, and for ever."/>
+      <outline text="龙爪槐守望者" type="rss" xmlUrl="https://www.ftium4.com/rss.xml" htmlUrl="https://www.ftium4.com/" description="一个帮助交互设计师成长的互联网传说。做任何事情都只是因为兴趣罢了"/>
+    </outline>
+    <outline text="热点资讯">
+      <outline text="36氪" type="rss" xmlUrl="https://36kr.com/feed" htmlUrl="http://36kr.com/"/>
+      <outline text="InfoQ" type="rss" xmlUrl="https://feed.infoq.com/" htmlUrl="https://www.infoq.com/" description="InfoQ feed"/>
+      <outline text="InfoQ 推荐" type="rss" xmlUrl="https://plink.anyfeeder.com/infoq/recommend" htmlUrl="https://www.infoq.cn/" description="InfoQ 推荐 - Powered by RSSHub"/>
+      <outline text="MIT 科技评论 - 本周热榜" type="rss" xmlUrl="https://rsshub.bestblogs.dev/mittrchina/hot" htmlUrl="https://www.mittrchina.com/hot" description="MIT 科技评论 - 本周热榜 - Powered by RSSHub"/>
+      <outline text="Readhub - 每日早报 - Readhub" type="rss" xmlUrl="https://rsshub.bestblogs.dev/readhub/daily" htmlUrl="https://api.readhub.cn/daily" description="1. OpenAI 任命应用业务 CEO 2. 沪上阿姨在港上市：高开 68% 3. 苹果高管：未来十年内 iPhone 可能被 AI 取代 4. 比尔・盖茨宣布将捐出几乎全部财富，盖茨基金会 2045 年底永久关闭 5. 传特朗普政府拟放松 AI 芯片出口限制 英伟达股价大涨 3.1% 6. 苹果公司高级副总裁：苹果和微软已达成年度搜索合作协议 7. 苹果或将 Safari 融入 AI 搜索，与 Perplexity 探讨合作新可能 8. 闲鱼月活用户规模破 2 亿，增速位列电商类 App 第一 9. 新加坡叫车平台 Grab 洽谈收购印尼同业 GoTo 10. 夸克发布「深度搜索」新产品，可解决多样化复杂问题 11. 国家发改委副主任郑备：正在加快完善民营企业参与国家重大项目建设的长效机制 12. 零一万物联创戴宗宏离职创业 13. 吉利已开启轮值总裁制：戴庆任首任财务背景总裁 - Powered by RSSHub"/>
+      <outline text="TechCrunch" type="rss" xmlUrl="https://techcrunch.com/feed/" htmlUrl="https://techcrunch.com/" description="Startup and Technology News"/>
+      <outline text="介绍 on SuperTechFans" type="rss" xmlUrl="https://www.supertechfans.com/cn/index.xml" htmlUrl="https://supertechfans.com/cn/" description="Recent content in 介绍 on SuperTechFans"/>
+      <outline text="奇客Solidot–传递最新科技情报" type="rss" xmlUrl="https://www.solidot.org/index.rss" htmlUrl="https://www.solidot.org/" description="奇客的知识，重要的东西。"/>
+      <outline text="少数派" type="rss" xmlUrl="https://sspai.com/feed" htmlUrl="https://sspai.com/" description="少数派致力于更好地运用数字产品或科学方法，帮助用户提升工作效率和生活品质"/>
+      <outline text="晚点 - 最新报道" type="rss" xmlUrl="https://rsshub.bestblogs.dev/latepost" htmlUrl="https://www.latepost.com/" description="晚一点，好一点 Later better - Powered by RSSHub"/>
+      <outline text="极客公园" type="rss" xmlUrl="https://www.geekpark.net/rss" htmlUrl="http://mainssl.geekpark.net/rss.rss" description="极客公园"/>
+      <outline text="爱范儿" type="rss" xmlUrl="https://www.ifanr.com/feed" htmlUrl="https://www.ifanr.com?utm_source=rss&amp;utm_medium=rss&amp;utm_campaign=/" description="关注明日产品的数字潮牌"/>
+      <outline text="蓝点网" type="rss" xmlUrl="https://www.landiannews.com/feed#/" htmlUrl="https://www.landiannews.com/" description="给你感兴趣的内容！"/>
+    </outline>
+    <outline text="社区">
+      <outline text="Hacker News" type="rss" xmlUrl="https://news.ycombinator.com/rss" htmlUrl="https://news.ycombinator.com/" description="Links for the intellectually curious, ranked by readers."/>
+      <outline text="LINUX DO - 最新话题" type="rss" xmlUrl="https://linux.do/latest.rss" htmlUrl="https://linux.do/latest" description="最新话题"/>
+      <outline text="LINUX DO - 热门话题" type="rss" xmlUrl="https://linux.do/top.rss" htmlUrl="https://linux.do/top" description="热门话题"/>
+      <outline text="V2EX" type="rss" xmlUrl="https://v2ex.com/index.xml" htmlUrl="https://www.v2ex.com/" description="way to explore"/>
+    </outline>
+    <outline text="资源">
+      <outline text="GitHub All Languages Weekly Trending" type="rss" xmlUrl="https://mshibanami.github.io/GitHubTrendingRSS/weekly/all.xml" htmlUrl="http://mshibanami.github.io/GitHubTrendingRSS" description="Weekly Trending of All Languages in GitHub"/>
+      <outline text="Mac玩儿法 | Mac软件推荐 | Mac软件评测 | Mac软件下载" type="rss" xmlUrl="https://www.waerfa.com/feed#/" htmlUrl="https://www.waerfa.com/"/>
+      <outline text="小众软件" type="rss" xmlUrl="https://www.appinn.com/feed/" htmlUrl="https://www.appinn.com/" description="分享免费、小巧、实用、有趣、绿色的软件"/>
+      <outline text="异次元软件世界" type="rss" xmlUrl="https://feed.iplaysoft.com/#/" htmlUrl="https://www.iplaysoft.com/" description="软件改变生活"/>
+    </outline>
+  </body>
+</opml>
