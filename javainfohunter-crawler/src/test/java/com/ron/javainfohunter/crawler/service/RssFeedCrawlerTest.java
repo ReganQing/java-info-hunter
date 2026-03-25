@@ -143,7 +143,7 @@ class RssFeedCrawlerTest {
     @Test
     void testCrawlResult_Success() {
         // Test CrawlResult.success() static method
-        List<com.ron.javainfohunter.crawler.dto.RawContentMessage> messages =
+        List<com.ron.javainfohunter.dto.RawContentMessage> messages =
                 new ArrayList<>();
 
         CrawlResult result = CrawlResult.success(

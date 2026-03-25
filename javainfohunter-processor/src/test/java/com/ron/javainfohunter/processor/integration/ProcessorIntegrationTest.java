@@ -10,7 +10,7 @@ import com.ron.javainfohunter.entity.RawContent;
 import com.ron.javainfohunter.entity.RssSource;
 import com.ron.javainfohunter.processor.dto.AgentResult;
 import com.ron.javainfohunter.processor.dto.ProcessedContentMessage;
-import com.ron.javainfohunter.processor.dto.RawContentMessage;
+import com.ron.javainfohunter.dto.RawContentMessage;
 import com.ron.javainfohunter.processor.service.ContentRoutingService;
 import com.ron.javainfohunter.repository.NewsRepository;
 import com.ron.javainfohunter.repository.RawContentRepository;
@@ -31,6 +31,7 @@ import org.testcontainers.containers.RabbitMQContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -67,6 +68,9 @@ import static org.mockito.Mockito.when;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles("test")
 @Testcontainers
+@EnabledIfSystemProperty(named = "run.integration.tests", matches = "true",
+        disabledReason = "Integration tests require Docker. " +
+                "Run with -Drun.integration.tests=true")
 class ProcessorIntegrationTest {
 
     @Container

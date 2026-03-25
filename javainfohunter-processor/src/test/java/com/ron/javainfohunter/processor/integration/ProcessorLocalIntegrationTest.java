@@ -7,7 +7,7 @@ import com.ron.javainfohunter.entity.News;
 import com.ron.javainfohunter.entity.RawContent;
 import com.ron.javainfohunter.entity.RssSource;
 import com.ron.javainfohunter.processor.dto.AgentResult;
-import com.ron.javainfohunter.processor.dto.RawContentMessage;
+import com.ron.javainfohunter.dto.RawContentMessage;
 import com.ron.javainfohunter.processor.service.ContentRoutingService;
 import com.ron.javainfohunter.repository.NewsRepository;
 import com.ron.javainfohunter.repository.RawContentRepository;
@@ -21,6 +21,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -45,13 +46,16 @@ import static org.mockito.Mockito.when;
  *   <li>RabbitMQ container accessible on localhost:25672</li>
  * </ul>
  *
- * <p>Run with: mvn test -Dtest=ProcessorLocalIntegrationTest -Dspring.profiles.active=local</p>
+ * <p>Run with: mvn test -Dtest=ProcessorLocalIntegrationTest -Dspring.profiles.active=local -Drun.local.tests=true</p>
  *
  * @author JavaInfoHunter
  * @version 0.0.1-SNAPSHOT
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @ActiveProfiles("local")
+@EnabledIfSystemProperty(named = "run.local.tests", matches = "true",
+        disabledReason = "Local tests require PostgreSQL and RabbitMQ running locally. " +
+                "Run with -Drun.local.tests=true")
 class ProcessorLocalIntegrationTest {
 
     @Autowired

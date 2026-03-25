@@ -3,7 +3,7 @@ package com.ron.javainfohunter.crawler.integration;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ron.javainfohunter.crawler.config.CrawlerProperties;
 import com.ron.javainfohunter.crawler.dto.CrawlResult;
-import com.ron.javainfohunter.crawler.dto.RawContentMessage;
+import com.ron.javainfohunter.dto.RawContentMessage;
 import com.ron.javainfohunter.crawler.publisher.ContentPublisher;
 import com.ron.javainfohunter.crawler.publisher.PublishResult;
 import com.ron.javainfohunter.crawler.service.CrawlCoordinator;

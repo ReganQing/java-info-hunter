@@ -1,7 +1,7 @@
 package com.ron.javainfohunter.processor.agent;
 
 import com.ron.javainfohunter.processor.dto.AgentResult;
-import com.ron.javainfohunter.processor.dto.RawContentMessage;
+import com.ron.javainfohunter.dto.RawContentMessage;
 
 /**
  * Interface for AI agent processors in the content processing pipeline.

@@ -3,7 +3,7 @@ package com.ron.javainfohunter.crawler.scheduler;
 import com.ron.javainfohunter.crawler.config.CrawlerProperties;
 import com.ron.javainfohunter.crawler.dto.CrawlResult;
 import com.ron.javainfohunter.crawler.dto.CrawlResultMessage;
-import com.ron.javainfohunter.crawler.dto.RawContentMessage;
+import com.ron.javainfohunter.dto.RawContentMessage;
 import com.ron.javainfohunter.crawler.publisher.CrawlResultPublisher;
 import com.ron.javainfohunter.crawler.publisher.ContentPublisher;
 import com.ron.javainfohunter.crawler.publisher.ErrorPublisher;

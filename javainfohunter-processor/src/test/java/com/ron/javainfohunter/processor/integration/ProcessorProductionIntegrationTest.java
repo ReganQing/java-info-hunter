@@ -16,7 +16,7 @@ import com.ron.javainfohunter.processor.agent.impl.SummaryAgentProcessor;
 import com.ron.javainfohunter.processor.config.ProcessorProperties;
 import com.ron.javainfohunter.processor.consumer.RawContentConsumer;
 import com.ron.javainfohunter.processor.dto.AgentResult;
-import com.ron.javainfohunter.processor.dto.RawContentMessage;
+import com.ron.javainfohunter.dto.RawContentMessage;
 import com.ron.javainfohunter.processor.service.ContentRoutingService;
 import com.ron.javainfohunter.processor.service.ResultAggregator;
 import com.ron.javainfohunter.repository.AgentExecutionRepository;

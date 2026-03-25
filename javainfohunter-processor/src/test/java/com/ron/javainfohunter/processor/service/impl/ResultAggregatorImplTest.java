@@ -4,7 +4,7 @@ import com.ron.javainfohunter.ai.service.EmbeddingService;
 import com.ron.javainfohunter.entity.News;
 import com.ron.javainfohunter.entity.RawContent;
 import com.ron.javainfohunter.processor.dto.ProcessedContentMessage;
-import com.ron.javainfohunter.processor.dto.RawContentMessage;
+import com.ron.javainfohunter.dto.RawContentMessage;
 import com.ron.javainfohunter.repository.NewsRepository;
 import com.ron.javainfohunter.repository.RawContentRepository;
 import org.junit.jupiter.api.BeforeEach;

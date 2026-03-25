@@ -1,7 +1,7 @@
 package com.ron.javainfohunter.crawler.publisher;
 
 import com.ron.javainfohunter.crawler.config.CrawlerProperties;
-import com.ron.javainfohunter.crawler.dto.RawContentMessage;
+import com.ron.javainfohunter.dto.RawContentMessage;
 import com.ron.javainfohunter.crawler.exception.PublishException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
