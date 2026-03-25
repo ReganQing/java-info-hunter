@@ -121,32 +121,18 @@ mvnw.cmd dependency:tree
 
 ## Running the Services
 
-### 使用部署脚本 (推荐)
-
-```bash
-# 启动所有服务
-./scripts/start-all.sh     # Linux/Mac
-scripts\start-all.bat      # Windows
-
-# 停止所有服务
-./scripts/stop-all.sh      # Linux/Mac
-scripts\stop-all.bat       # Windows
-```
-
 ### 手动启动单个服务
 
 ```bash
-# API Service (Port 8080)
-mvnw.cmd spring-boot:run -pl javainfohunter-api
+  # 方法 1: 使用完整路径启动（推荐）
+  D:/Projects/BackEnd/JavaInfoHunter/mvnw.cmd spring-boot:run -pl javainfohunter-api -Dspring-boot.run.profiles=develop
+  D:/Projects/BackEnd/JavaInfoHunter/mvnw.cmd spring-boot:run -pl javainfohunter-crawler
+  -Dspring-boot.run.profiles=develop
+  D:/Projects/BackEnd/JavaInfoHunter/mvnw.cmd spring-boot:run -pl javainfohunter-processor
+  -Dspring-boot.run.profiles=develop
 
-# Crawler Service (Port 8081)
-mvnw.cmd spring-boot:run -pl javainfohunter-crawler
-
-# Processor Service (Port 8082)
-mvnw.cmd spring-boot:run -pl javainfohunter-processor
-
-# 使用特定 profile
-mvnw.cmd spring-boot:run -pl javainfohunter-api -Dspring-boot.run.profiles=develop
+# 如果需要使用 DASHSCOPE_API_KEY
+mvnw.cmd spring-boot:run -pl javainfohunter-processor -Dspring-boot.run.profiles=develop 
 ```
 
 ## Architecture Overview
@@ -251,7 +237,7 @@ Specialized Agents (业务 Agent)
    public class Config {
        @Autowired
        private AgentManager agentManager;
-
+   
        @PostConstruct
        public void register() {
            agentManager.registerAgent("my-agent", myAgent);
@@ -263,19 +249,19 @@ Specialized Agents (业务 Agent)
    ```java
    @Autowired
    private TaskCoordinator taskCoordinator;
-
+   
    // Chain 模式
    CoordinationResult result = taskCoordinator.executeChain(
        "任务描述",
        List.of("agent1", "agent2", "agent3")
    );
-
+   
    // Parallel 模式
    result = taskCoordinator.executeParallel(
        "任务描述",
        List.of("agent1", "agent2", "agent3")
    );
-
+   
    // Master-Worker 模式
    result = taskCoordinator.executeMasterWorker(
        "任务描述",
@@ -377,7 +363,7 @@ Specialized Agents (业务 Agent)
 
 ## Environment Variables
 
-### 必需的环境变量
+### 必需的环境变量（示例）
 
 ```bash
 # Alibaba DashScope API (必需，用于 AI 功能)
@@ -389,7 +375,7 @@ export DB_PASSWORD=your-password
 
 # RabbitMQ (可选，有默认值)
 export RABBITMQ_HOST=localhost
-export RABBITMQ_PORT=5672
+export RABBITMQ_PORT=25672
 export RABBITMQ_USERNAME=admin
 export RABBITMQ_PASSWORD=admin
 
@@ -503,15 +489,6 @@ mvnw.cmd flyway:repair
 ### 常用命令
 
 ```bash
-# 启动所有服务
-./scripts/start-all.sh
-
-# 停止所有服务
-./scripts/stop-all.sh
-
-# 查看日志
-tail -f javainfohunter-crawler/logs/javainfohunter-crawler.log
-
 # 构建并跳过测试
 mvnw.cmd clean package -DskipTests
 
