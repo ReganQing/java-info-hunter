@@ -64,12 +64,25 @@ spring:
         size: 25
       connection:
         mode: channel
+  # Spring AI DashScope Configuration
+  ai:
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY}
+      chat:
+        enabled: ${AI_CHAT_ENABLED:true}
+        options:
+          model: qwen-max
+          temperature: 0.7
 
 server:
   port: 8081
 
 # Crawler Module Configuration
 javainfohunter:
+  # AI service is NOT needed for crawler module
+  ai:
+    enabled: false
+
   crawler:
     # Enable/disable crawler
     enabled: ${CRAWLER_ENABLED:true}

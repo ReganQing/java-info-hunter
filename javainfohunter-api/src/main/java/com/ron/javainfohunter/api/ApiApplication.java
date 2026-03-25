@@ -4,6 +4,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.domain.EntityScan;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeChatAutoConfiguration;
+import com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeAgentAutoConfiguration;
 
 /**
  * JavaInfoHunter REST API Application
@@ -14,7 +16,13 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
  * @author JavaInfoHunter
  * @version 0.0.1-SNAPSHOT
  */
-@SpringBootApplication(scanBasePackages = "com.ron.javainfohunter")
+@SpringBootApplication(
+    scanBasePackages = "com.ron.javainfohunter",
+    exclude = {
+        DashScopeChatAutoConfiguration.class,
+        DashScopeAgentAutoConfiguration.class
+    }
+)
 @EnableJpaRepositories(basePackages = "com.ron.javainfohunter.repository")
 @EntityScan(basePackages = "com.ron.javainfohunter.entity")
 public class ApiApplication {

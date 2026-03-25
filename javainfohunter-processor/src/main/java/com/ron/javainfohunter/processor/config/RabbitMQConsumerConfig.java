@@ -10,6 +10,7 @@ import org.springframework.amqp.support.converter.DefaultClassMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -71,6 +72,12 @@ import org.springframework.context.annotation.Configuration;
 @Slf4j
 @Configuration
 public class RabbitMQConsumerConfig {
+
+    static {
+        log.info("=================================================");
+        log.info("RabbitMQConsumerConfig class loaded");
+        log.info("=================================================");
+    }
 
     // ========================================================================
     // Exchange Names
@@ -174,6 +181,7 @@ public class RabbitMQConsumerConfig {
      * @return DirectExchange for crawler messages
      */
     @Bean
+    @ConditionalOnMissingBean(name = "crawlerExchange")
     public DirectExchange crawlerExchange() {
         return new DirectExchange(
             CRAWLER_EXCHANGE,
@@ -203,6 +211,7 @@ public class RabbitMQConsumerConfig {
      * @return DirectExchange for dead letter messages
      */
     @Bean
+    @ConditionalOnMissingBean(name = "deadLetterExchange")
     public DirectExchange deadLetterExchange() {
         return new DirectExchange(
             DEAD_LETTER_EXCHANGE,
@@ -579,17 +588,21 @@ public class RabbitMQConsumerConfig {
      * @return MessageConverter
      */
     @Bean
+    @ConditionalOnMissingBean(name = "jsonMessageConverter")
     public MessageConverter jsonMessageConverter() {
+        // Create converter that doesn't use type header
+        // Messages will be deserialized based on the method parameter type
         Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter();
-        // Trust all JavaInfoHunter packages for cross-module message passing
+        converter.setAlwaysConvertToInferredType(false);
+
+        // Trust all packages for cross-module communication
         DefaultClassMapper classMapper = new DefaultClassMapper();
         classMapper.setTrustedPackages("*");
 
-        // Map crawler's RawContentMessage to processor's RawContentMessage
-        // This allows deserialization of messages from the crawler module
+        // Map shared RawContentMessage class
         java.util.Map<String, Class<?>> idClassMapping = new java.util.HashMap<>();
-        idClassMapping.put("com.ron.javainfohunter.crawler.dto.RawContentMessage",
-                          com.ron.javainfohunter.processor.dto.RawContentMessage.class);
+        idClassMapping.put("com.ron.javainfohunter.dto.RawContentMessage",
+                          com.ron.javainfohunter.dto.RawContentMessage.class);
         classMapper.setIdClassMapping(idClassMapping);
 
         converter.setClassMapper(classMapper);
@@ -607,6 +620,10 @@ public class RabbitMQConsumerConfig {
     public RabbitListenerContainerFactory<?> rabbitListenerContainerFactory(
         ConnectionFactory connectionFactory
     ) {
+        log.info("=================================================");
+        log.info("Creating rabbitListenerContainerFactory bean");
+        log.info("=================================================");
+
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory);
         factory.setMessageConverter(jsonMessageConverter());
@@ -614,6 +631,9 @@ public class RabbitMQConsumerConfig {
         factory.setConcurrentConsumers(3);
         factory.setMaxConcurrentConsumers(10);
         factory.setPrefetchCount(20);
+
+        log.info("rabbitListenerContainerFactory created successfully");
+
         return factory;
     }
 }

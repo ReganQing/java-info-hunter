@@ -69,7 +69,12 @@ public class RabbitMQConfig {
     // Queue Names
     // ========================================================================
 
-    public static final String RAW_CONTENT_QUEUE = "crawler.raw.content.queue";
+    /**
+     * Queue for raw RSS content messages.
+     * NOTE: Uses processor's queue name for direct message delivery.
+     * Processor module listens to this queue.
+     */
+    public static final String RAW_CONTENT_QUEUE = "processor.raw.content.queue";
     public static final String CONTENT_ENCODED_QUEUE = "crawler.content.encoded.queue";
     public static final String CRAWL_RESULT_QUEUE = "crawler.crawl.result.queue";
     public static final String CRAWL_ERROR_QUEUE = "crawler.crawl.error.queue";
@@ -348,7 +353,10 @@ public class RabbitMQConfig {
      */
     @Bean
     public MessageConverter jsonMessageConverter() {
-        return new Jackson2JsonMessageConverter();
+        // Configure converter to not use type header for better compatibility
+        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter();
+        converter.setAlwaysConvertToInferredType(false);
+        return converter;
     }
 
     /**

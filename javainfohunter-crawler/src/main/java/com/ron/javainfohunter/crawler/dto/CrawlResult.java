@@ -1,5 +1,6 @@
 package com.ron.javainfohunter.crawler.dto;
 
+import com.ron.javainfohunter.dto.RawContentMessage;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

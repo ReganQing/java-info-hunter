@@ -15,12 +15,26 @@ spring:
   # RabbitMQ Configuration for Development
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
+    port: ${RABBITMQ_PORT:25672}
     username: ${RABBITMQ_USERNAME}
     password: ${RABBITMQ_PASSWORD}
+  
+  # Spring AI DashScope Configuration
+  ai:
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY}
+      chat:
+        enabled: ${AI_CHAT_ENABLED:true}
+        options:
+          model: qwen-max
+          temperature: 0.7
 
 # Crawler Configuration for Development
 javainfohunter:
+  # AI service is NOT needed for crawler module
+  ai:
+    enabled: false
+
   crawler:
     scheduler:
       initial-delay: 5000  # 5 seconds for faster startup in dev

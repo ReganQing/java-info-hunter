@@ -7,6 +7,19 @@ spring:
   application:
     name: javainfohunter-api
 
+  # AI configuration (development placeholder)
+  ai:
+    dashscope:
+      api-key: ${DASHSCOPE_API_KEY:}
+      enabled: false
+
+  # Auto-configuration exclusions
+  autoconfigure:
+    exclude:
+      - com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeChatAutoConfiguration
+      - com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeAutoConfiguration
+      - com.alibaba.cloud.ai.autoconfigure.dashscope.DashScopeAgentAutoConfiguration
+
   # Database configuration
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:javainfohunter}
@@ -35,6 +48,20 @@ spring:
     locations: classpath:db/migration
     baseline-on-migrate: true
 
+  # Redis configuration (optional)
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: ${REDIS_DATABASE:0}
+      jedis:
+        pool:
+          max-active: ${REDIS_POOL_MAX_ACTIVE:8}
+          max-idle: ${REDIS_POOL_MAX_IDLE:8}
+          min-idle: ${REDIS_POOL_MIN_IDLE:0}
+      timeout: 2000ms
+
 # Actuator configuration
 management:
   endpoints:
@@ -45,6 +72,11 @@ management:
   endpoint:
     health:
       show-details: when-authorized
+  health:
+    redis:
+      enabled: false
+    defaults:
+      enabled: true
 
 # SpringDoc OpenAPI configuration
 springdoc:
@@ -75,6 +107,8 @@ logging:
 
 # JavaInfoHunter API configuration
 javainfohunter:
+  ai:
+    enabled: false  # Disable AI features for API service (enable only when needed)
   api:
     cors:
       enabled: true
