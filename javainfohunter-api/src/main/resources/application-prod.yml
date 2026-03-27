@@ -30,7 +30,6 @@ spring:
     show-sql: false       # Never show SQL in production
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: false
         jdbc:
           batch_size: 50

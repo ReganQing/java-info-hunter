@@ -24,7 +24,6 @@ spring:
     show-sql: true      # Show SQL for debugging
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
     open-in-view: false
 
