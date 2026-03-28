@@ -45,36 +45,13 @@
         <dependency>
             <groupId>com.alibaba.cloud.ai</groupId>
             <artifactId>spring-ai-alibaba-starter-dashscope</artifactId>
-            <exclusions>
-                <!-- 排除 Spring AI 核心避免 Bean 冲突 -->
-                <exclusion>
-                    <groupId>org.springframework.ai</groupId>
-                    <artifactId>spring-ai-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.springframework.ai</groupId>
-                    <artifactId>spring-autoconfigure</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <!-- Spring AI Vector Store (可选 - PostgreSQL pgvector) -->
         <dependency>
             <groupId>org.springframework.ai</groupId>
-            <artifactId>spring-ai-pgvector-store-spring-boot-starter</artifactId>
-            <version>1.0.0-M2</version>
+            <artifactId>spring-ai-starter-vector-store-pgvector</artifactId>
             <optional>true</optional>
-            <exclusions>
-                <!-- 排除 Spring AI 自动配置避免 Bean 冲突 -->
-                <exclusion>
-                    <groupId>org.springframework.ai</groupId>
-                    <artifactId>spring-ai-spring-boot-autoconfigure</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.springframework.ai</groupId>
-                    <artifactId>spring-ai-core</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <!-- Lombok -->

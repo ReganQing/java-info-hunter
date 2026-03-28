@@ -29,7 +29,7 @@ NoSuchBeanDefinitionException: No qualifying bean of type 'org.springframework.a
 <dependency>
     <groupId>com.alibaba.cloud.ai</groupId>
     <artifactId>spring-ai-alibaba-starter</artifactId>
-    <version>1.0.0-M2.1</version>
+    <version>1.1.2.0</version>
 </dependency>
 ```
 
@@ -55,7 +55,7 @@ mvnw.cmd dependency:tree -pl javainfohunter-ai-service
 
 **错误信息：**
 ```
-Could not resolve artifact: com.alibaba.cloud.ai:spring-ai-alibaba-starter:1.0.0-M2.1
+Could not resolve artifact: com.alibaba.cloud.ai:spring-ai-alibaba-starter:1.1.2.0
 ```
 
 **原因：** 未配置 Spring Milestone 仓库。
@@ -719,7 +719,7 @@ class AgentServiceTest {
    - [../docs/迁移完成总结.md](../docs/迁移完成总结.md) - 实现细节
 
 4. **检查已知问题**：
-   - Spring AI Alibaba 版本限制：仅支持 1.0.0-M2.1
+   - Spring AI Alibaba 版本限制：仅支持 1.1.2.0
    - Master-Worker 模式：尚未实现
    - 虚拟线程：需要 Java 21+
 

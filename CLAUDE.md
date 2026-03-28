@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-JavaInfoHunter is a high-performance distributed information collection system built with **Java 21** and **Spring Boot 3.3.5**. The project uses **Agent Orchestration** as its core intelligent processing pattern, powered by Spring AI and Alibaba DashScope.
+JavaInfoHunter is a high-performance distributed information collection system built with **Java 21** and **Spring Boot 3.5.12**. The project uses **Agent Orchestration** as its core intelligent processing pattern, powered by Spring AI 1.1.2 and Alibaba DashScope.
 
 The system follows a microservices architecture with clear separation of concerns across multiple modules.
 
@@ -175,10 +175,10 @@ Specialized Agents (业务 Agent)
 
 | 技术 | 版本 | 用途 |
 |------|------|------|
-| Spring Boot | 3.3.5 | 核心框架 |
+| Spring Boot | 3.5.12 | 核心框架 |
 | Java | 21 | 虚拟线程支持 |
-| Spring AI | 1.0.2 | AI 抽象层 |
-| Spring AI Alibaba | 1.0.0-M2.1 | 阿里云通义千问 |
+| Spring AI | 1.1.2 | AI 抽象层 |
+| Spring AI Alibaba | 1.1.2.0 | 阿里云通义千问 |
 | PostgreSQL | Latest | 主数据库，支持 pgvector |
 | RabbitMQ | Latest | 消息队列 |
 | Redis | Latest | 缓存层 |
@@ -363,30 +363,6 @@ Specialized Agents (业务 Agent)
 
 ## Environment Variables
 
-### 必需的环境变量（示例）
-
-```bash
-# Alibaba DashScope API (必需，用于 AI 功能)
-export DASHSCOPE_API_KEY=your-api-key-here
-
-# Database (必需，用于数据持久化)
-export DB_USERNAME=postgres
-export DB_PASSWORD=your-password
-
-# RabbitMQ (可选，有默认值)
-export RABBITMQ_HOST=localhost
-export RABBITMQ_PORT=25672
-export RABBITMQ_USERNAME=admin
-export RABBITMQ_PASSWORD=admin
-
-# Redis (可选，API 模块使用)
-export REDIS_HOST=localhost
-export REDIS_PORT=6379
-export REDIS_PASSWORD=
-```
-
-### 配置文件示例
-
 ```yaml
 spring:
   ai:
@@ -394,7 +370,7 @@ spring:
       api-key: ${DASHSCOPE_API_KEY}
       chat:
         options:
-          model: qwen-max
+          model: qwen3.5-plus
 
   datasource:
     url: jdbc:postgresql://localhost:5432/javainfohunter
@@ -403,7 +379,7 @@ spring:
 
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
+    port: ${RABBITMQ_PORT:25672}
     username: ${RABBITMQ_USERNAME:admin}
     password: ${RABBITMQ_PASSWORD:admin}
 

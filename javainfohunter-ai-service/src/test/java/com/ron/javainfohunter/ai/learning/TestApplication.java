@@ -17,7 +17,9 @@ import org.springframework.context.annotation.ComponentScan;
         org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration.class,
         org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration.class,
         org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration.class,
-        org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration.class
+        org.springframework.boot.autoconfigure.data.jpa.JpaRepositoriesAutoConfiguration.class,
+        // 排除 PgVectorStore 自动配置（需要 JdbcTemplate，测试环境无数据库）
+        org.springframework.ai.vectorstore.pgvector.autoconfigure.PgVectorStoreAutoConfiguration.class
     }
 )
 @ComponentScan(basePackages = "com.ron.javainfohunter.ai.learning")

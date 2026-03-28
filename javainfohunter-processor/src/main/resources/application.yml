@@ -2,6 +2,11 @@ spring:
   application:
     name: content-processor
 
+  # Exclude PgVectorStore auto-config (processor uses embedding but doesn't need vector store auto-config)
+  autoconfigure:
+    exclude:
+      - org.springframework.ai.vectorstore.pgvector.autoconfigure.PgVectorStoreAutoConfiguration
+
   # Profile Management
   profiles:
     group:
@@ -73,13 +78,24 @@ spring:
       chat:
         enabled: ${AI_CHAT_ENABLED:true}
         options:
-          model: qwen-max
+          model: qwen3.5-plus
           temperature: 0.7
       # HTTP Client Configuration
       client:
         connect-timeout: 60s
         read-timeout: 300s
         write-timeout: 60s
+
+    # Retry Configuration - disable retry on 4xx client errors
+    # DashScope returns 400 for token limit violations (InvalidParameter), no point retrying
+    retry:
+      max-attempts: 1
+      on-client-errors: false
+      exclude-on-http-codes:
+        - 400
+        - 401
+        - 403
+        - 404
 
 server:
   port: 8082

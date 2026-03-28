@@ -256,7 +256,7 @@ mvnw.cmd test -pl javainfohunter-processor -Dspring.profiles.active=test
 | **Message Queue** | RabbitMQ | 3.12+ |
 | **Database** | PostgreSQL | 16+ (pgvector) |
 | **JPA** | Spring Data JPA | - |
-| **AI Framework** | Spring AI Alibaba | 1.0.0-M2.1 |
+| **AI Framework** | Spring AI Alibaba | 1.1.2.0 |
 | **Migration** | Flyway | - |
 | **Monitoring** | Spring Boot Actuator | - |
 

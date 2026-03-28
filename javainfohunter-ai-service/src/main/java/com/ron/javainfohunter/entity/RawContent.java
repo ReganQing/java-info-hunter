@@ -126,6 +126,7 @@ public class RawContent {
     @Enumerated(EnumType.STRING)
     @NotNull(message = "Processing status cannot be null")
     @Column(nullable = false, length = 20, name = "processing_status")
+    @Builder.Default
     private ProcessingStatus processingStatus = ProcessingStatus.PENDING;
 
     /**

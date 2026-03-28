@@ -7,7 +7,6 @@ import com.ron.javainfohunter.crawler.exception.ConfirmTimeoutException;
 import com.ron.javainfohunter.crawler.exception.PublishException;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import org.springframework.amqp.rabbit.connection.CorrelationData;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;

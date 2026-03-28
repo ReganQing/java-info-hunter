@@ -80,3 +80,6 @@ test-*.py
 test-*.sh
 test-*.bat
 TestDbQuery.*
+
+### Windows Artifacts ###
+nul

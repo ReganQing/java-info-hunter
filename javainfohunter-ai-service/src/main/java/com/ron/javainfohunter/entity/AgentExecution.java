@@ -224,6 +224,7 @@ public class AgentExecution {
      */
     @NotNull(message = "Retry count cannot be null")
     @Column(nullable = false)
+    @Builder.Default
     private Integer retryCount = 0;
 
     /**
@@ -231,6 +232,7 @@ public class AgentExecution {
      */
     @NotNull(message = "Max retries cannot be null")
     @Column(nullable = false)
+    @Builder.Default
     private Integer maxRetries = 3;
 
     /**

@@ -97,9 +97,16 @@ public class ProcessorProperties {
 
         /**
          * Maximum processing time in milliseconds.
-         * Default: 30000ms (30 seconds)
+         * Default: 120000ms (2 minutes)
          */
-        private long timeout = 30000;
+        private long timeout = 120000;
+
+        /**
+         * Maximum estimated token count for content sent to the analysis agent.
+         * Content exceeding this limit will be truncated at a sentence boundary.
+         * Default: 4000 tokens (conservative estimate for qwen-max)
+         */
+        private int maxContentTokens = 4000;
     }
 
     /**
@@ -114,15 +121,29 @@ public class ProcessorProperties {
 
         /**
          * Maximum processing time in milliseconds.
-         * Default: 30000ms (30 seconds)
+         * Default: 120000ms (2 minutes)
          */
-        private long timeout = 30000;
+        private long timeout = 120000;
 
         /**
          * Maximum length of generated summary in characters.
          * Default: 500 characters
          */
         private int maxSummaryLength = 500;
+
+        /**
+         * Maximum estimated token count for content before chunking is triggered.
+         * Content below this limit is processed in a single API call.
+         * Content above this limit is split into chunks for map-reduce processing.
+         * Default: 8000 tokens
+         */
+        private int maxContentTokens = 8000;
+
+        /**
+         * Token limit per chunk when using map-reduce processing.
+         * Default: 6000 tokens (leaves room for system prompt + user prompt)
+         */
+        private int chunkTokenLimit = 6000;
     }
 
     /**
@@ -137,9 +158,16 @@ public class ProcessorProperties {
 
         /**
          * Maximum processing time in milliseconds.
-         * Default: 30000ms (30 seconds)
+         * Default: 120000ms (2 minutes)
          */
-        private long timeout = 30000;
+        private long timeout = 120000;
+
+        /**
+         * Maximum estimated token count for content sent to the classification agent.
+         * Content exceeding this limit will be truncated at a sentence boundary.
+         * Default: 2000 tokens
+         */
+        private int maxContentTokens = 2000;
     }
 
     /**

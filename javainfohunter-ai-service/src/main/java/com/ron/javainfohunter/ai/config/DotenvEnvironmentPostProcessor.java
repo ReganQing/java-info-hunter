@@ -8,7 +8,10 @@ import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,26 +34,26 @@ public class DotenvEnvironmentPostProcessor implements EnvironmentPostProcessor 
 
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
-        // 如果已经通过系统环境变量设置了 DASHSCOPE_API_KEY，跳过 .env 加载
-        String existingApiKey = environment.getProperty("spring.ai.dashscope.api-key");
-        if (existingApiKey != null && !existingApiKey.isEmpty()) {
-            log.info("DASHSCOPE_API_KEY already set in environment, skipping .env loading");
-            return;
-        }
-
         try {
             Dotenv dotenv = loadDotenv();
 
             if (dotenv != null) {
                 Map<String, Object> envMap = new HashMap<>();
 
-                // 读取所有环境变量
+                // 只将 .env 中有、但系统环境变量中没有的 key 加入
+                // 系统环境变量优先级更高，不覆盖已存在的值
                 dotenv.entries().forEach(entry -> {
                     String key = entry.getKey();
                     String value = entry.getValue();
+
+                    // 如果系统环境变量中已经有该 key，则跳过（不覆盖）
+                    if (System.getenv(key) != null) {
+                        log.debug("Skipping .env key already set in system env: {}", key);
+                        return;
+                    }
+
                     envMap.put(key, value);
 
-                    // 敏感信息脱敏后记录
                     if (isSensitive(key)) {
                         log.debug("Loaded from .env: {} = ***", key);
                     } else {
@@ -58,13 +61,12 @@ public class DotenvEnvironmentPostProcessor implements EnvironmentPostProcessor 
                     }
                 });
 
-                // 添加到 Spring Environment 优先级最高
+                // 添加到 Spring Environment，优先级低于系统环境变量
                 environment.getPropertySources()
-                        .addFirst(new MapPropertySource(DOTENV_SOURCE_NAME, envMap));
+                        .addLast(new MapPropertySource(DOTENV_SOURCE_NAME, envMap));
 
                 log.info(".env file loaded successfully with {} variables", envMap.size());
 
-                // 验证关键环境变量
                 if (envMap.containsKey("DASHSCOPE_API_KEY")) {
                     log.info("DASHSCOPE_API_KEY loaded from .env");
                 }
@@ -78,17 +80,21 @@ public class DotenvEnvironmentPostProcessor implements EnvironmentPostProcessor 
 
     /**
      * 尝试从多个位置加载 .env 文件
+     * <p>
+     * 搜索顺序：从 user.dir 开始逐级向上查找，直到找到包含 .env 的目录。
+     * 这样无论从项目根目录还是子模块目录启动，都能正确定位 .env 文件。
+     * </p>
      */
     private Dotenv loadDotenv() {
-        String[] possiblePaths = {
-                ".",                      // 当前工作目录
-                "../",                   // 父目录
-                "../../",                // 祖父目录
-                System.getProperty("user.dir"), // user.dir
-        };
+        List<String> searchPaths = buildSearchPaths();
 
-        for (String path : possiblePaths) {
+        for (String path : searchPaths) {
             try {
+                File envFile = new File(path, ".env");
+                if (!envFile.exists() || !envFile.isFile()) {
+                    continue;
+                }
+
                 Dotenv dotenv = Dotenv.configure()
                         .directory(path)
                         .filename(".env")
@@ -96,26 +102,34 @@ public class DotenvEnvironmentPostProcessor implements EnvironmentPostProcessor 
                         .ignoreIfMissing()
                         .load();
 
-                // 验证是否真的加载到了文件
+                // 验证是否真的加载到了内容
                 if (dotenv.entries().iterator().hasNext()) {
-                    log.debug("Loaded .env from: {}", path);
+                    log.info("Loaded .env from: {}", envFile.getAbsolutePath());
                     return dotenv;
                 }
             } catch (Exception e) {
-                // 继续尝试下一个路径
+                log.debug("Could not load .env from {}: {}", path, e.getMessage());
             }
         }
 
-        // 最后尝试不指定目录
-        Dotenv dotenv = Dotenv.configure()
-                .ignoreIfMalformed()
-                .ignoreIfMissing()
-                .load();
-
-        if (dotenv.entries().iterator().hasNext()) {
-            return dotenv;
-        }
+        log.warn("No .env file found in any search path: {}", searchPaths);
         return null;
+    }
+
+    /**
+     * 构建 .env 搜索路径列表：从 user.dir 开始，逐级向上遍历父目录
+     */
+    private List<String> buildSearchPaths() {
+        List<String> paths = new ArrayList<>();
+
+        // 从 user.dir 开始向上查找（最多向上 4 层）
+        File dir = new File(System.getProperty("user.dir", ".")).getAbsoluteFile();
+        for (int i = 0; i < 5 && dir != null; i++) {
+            paths.add(dir.getAbsolutePath());
+            dir = dir.getParentFile();
+        }
+
+        return paths;
     }
 
     /**

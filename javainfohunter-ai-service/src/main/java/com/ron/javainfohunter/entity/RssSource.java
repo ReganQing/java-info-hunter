@@ -82,6 +82,7 @@ public class RssSource {
     @NotNull(message = "Crawl interval cannot be null")
     @Min(value = 60, message = "Crawl interval must be at least 60 seconds")
     @Column(nullable = false, name = "crawl_interval_seconds")
+    @Builder.Default
     private Integer crawlIntervalSeconds = 3600; // Default: 1 hour
 
     /**
@@ -89,6 +90,7 @@ public class RssSource {
      */
     @NotNull(message = "Active status cannot be null")
     @Column(nullable = false)
+    @Builder.Default
     private Boolean isActive = true;
 
     /**
@@ -97,6 +99,7 @@ public class RssSource {
     @NotNull(message = "Max retries cannot be null")
     @Min(value = 0, message = "Max retries cannot be negative")
     @Column(nullable = false, name = "max_retries")
+    @Builder.Default
     private Integer maxRetries = 3;
 
     /**
@@ -105,6 +108,7 @@ public class RssSource {
     @NotNull(message = "Retry backoff cannot be null")
     @Min(value = 0, message = "Retry backoff cannot be negative")
     @Column(nullable = false, name = "retry_backoff_seconds")
+    @Builder.Default
     private Integer retryBackoffSeconds = 60;
 
     /**
@@ -112,6 +116,7 @@ public class RssSource {
      */
     @Size(max = 10, message = "Language must not exceed 10 characters")
     @Column(length = 10)
+    @Builder.Default
     private String language = "en";
 
     /**
@@ -119,6 +124,7 @@ public class RssSource {
      */
     @Size(max = 50, message = "Timezone must not exceed 50 characters")
     @Column(length = 50)
+    @Builder.Default
     private String timezone = "UTC";
 
     /**
@@ -146,6 +152,7 @@ public class RssSource {
      */
     @NotNull(message = "Total articles cannot be null")
     @Column(nullable = false)
+    @Builder.Default
     private Long totalArticles = 0L;
 
     /**
@@ -153,6 +160,7 @@ public class RssSource {
      */
     @NotNull(message = "Failed crawls cannot be null")
     @Column(nullable = false)
+    @Builder.Default
     private Long failedCrawls = 0L;
 
     /**

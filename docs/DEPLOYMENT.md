@@ -249,7 +249,7 @@ spring:
       api-key: ${DASHSCOPE_API_KEY}
       chat:
         options:
-          model: qwen-max
+          model: qwen3.5-plus
 ```
 
 ### 步骤 4: 启动服务

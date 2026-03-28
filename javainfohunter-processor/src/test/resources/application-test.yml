@@ -54,7 +54,7 @@ spring:
       api-key: test-api-key
       chat:
         options:
-          model: qwen-max
+          model: qwen3.5-plus
           temperature: 0.7
 
 # Processor Module Test Configuration

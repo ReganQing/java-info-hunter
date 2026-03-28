@@ -8,7 +8,7 @@ import com.rabbitmq.client.DeliverCallback;
 import com.ron.javainfohunter.ai.service.ChatService;
 import com.ron.javainfohunter.ai.service.EmbeddingService;
 import com.ron.javainfohunter.crawler.dto.CrawlResult;
-import com.ron.javainfohunter.crawler.dto.RawContentMessage;
+import com.ron.javainfohunter.dto.RawContentMessage;
 import com.ron.javainfohunter.crawler.publisher.ContentPublisher;
 import com.ron.javainfohunter.crawler.service.CrawlCoordinator;
 import com.ron.javainfohunter.crawler.service.RssSourceService;
@@ -237,8 +237,8 @@ class CrawlerToProcessorE2ETest {
 
         // Step 5: Process content through routing service (simulating processor)
         // Convert crawler message to processor message format
-        com.ron.javainfohunter.processor.dto.RawContentMessage processorMessage =
-                com.ron.javainfohunter.processor.dto.RawContentMessage.builder()
+        RawContentMessage processorMessage =
+                RawContentMessage.builder()
                 .guid(crawlerMessage.getGuid())
                 .title(crawlerMessage.getTitle())
                 .link(crawlerMessage.getLink())

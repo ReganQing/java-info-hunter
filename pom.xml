@@ -5,7 +5,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.5</version>
+        <version>3.5.12</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.ron</groupId>
@@ -30,10 +30,10 @@
 
     <properties>
         <java.version>21</java.version>
-        <spring-ai.version>1.0.2</spring-ai.version>
-        <spring-ai-alibaba.version>1.0.0-M2.1</spring-ai-alibaba.version>
+        <spring-ai.version>1.1.2</spring-ai.version>
+        <spring-ai-alibaba.version>1.1.2.0</spring-ai-alibaba.version>
         <hutool.version>5.8.38</hutool.version>
-        <testcontainers.version>1.20.4</testcontainers.version>
+        <testcontainers.version>1.21.0</testcontainers.version>
         <restassured.version>5.5.0</restassured.version>
         <jacoco.version>0.8.12</jacoco.version>
     </properties>
@@ -50,11 +50,29 @@
     <!-- 依赖管理 -->
     <dependencyManagement>
         <dependencies>
-            <!-- Spring AI Alibaba BOM -->
+            <!-- Spring AI BOM (must come before Alibaba BOM so Alibaba overrides for its artifacts) -->
+            <dependency>
+                <groupId>org.springframework.ai</groupId>
+                <artifactId>spring-ai-bom</artifactId>
+                <version>${spring-ai.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Spring AI Alibaba Extensions BOM (manages spring-ai-alibaba-starter-dashscope, etc.) -->
+            <dependency>
+                <groupId>com.alibaba.cloud.ai</groupId>
+                <artifactId>spring-ai-alibaba-extensions-bom</artifactId>
+                <version>${spring-ai-alibaba.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- Spring AI Alibaba BOM (manages agent-framework, graph-core, studio, etc.) -->
             <dependency>
                 <groupId>com.alibaba.cloud.ai</groupId>
                 <artifactId>spring-ai-alibaba-bom</artifactId>
-                <version>1.0.0.2</version>
+                <version>${spring-ai-alibaba.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -94,49 +112,6 @@
                 <groupId>com.rometools</groupId>
                 <artifactId>rome-modules</artifactId>
                 <version>1.19.0</version>
-            </dependency>
-
-            <!-- Redis -->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-data-redis</artifactId>
-                <version>3.3.5</version>
-            </dependency>
-            <dependency>
-                <groupId>redis.clients</groupId>
-                <artifactId>jedis</artifactId>
-                <version>5.1.2</version>
-            </dependency>
-
-            <!-- Spring AOP for Rate Limiting -->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-aop</artifactId>
-                <version>3.3.5</version>
-            </dependency>
-
-            <!-- Spring Boot Actuator for Monitoring -->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-starter-actuator</artifactId>
-                <version>3.3.5</version>
-            </dependency>
-            <dependency>
-                <groupId>io.micrometer</groupId>
-                <artifactId>micrometer-registry-prometheus</artifactId>
-                <version>1.12.5</version>
-            </dependency>
-
-            <!-- Micrometer Tracing -->
-            <dependency>
-                <groupId>io.micrometer</groupId>
-                <artifactId>micrometer-tracing-bridge-brave</artifactId>
-                <version>1.12.5</version>
-            </dependency>
-            <dependency>
-                <groupId>io.zipkin.reporter2</groupId>
-                <artifactId>zipkin-reporter-brave</artifactId>
-                <version>3.4.0</version>
             </dependency>
 
             <!-- Testcontainers BOM -->

@@ -19,6 +19,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -60,6 +61,12 @@ public class ContentRoutingServiceImpl implements ContentRoutingService {
     private final List<AgentProcessor> agentProcessors;
     private final ResultAggregator resultAggregator;
     private final ExecutorService executor = Executors.newVirtualThreadPerTaskExecutor();
+
+    /**
+     * Semaphore to limit concurrent DashScope API calls.
+     * Prevents overwhelming the API when processing a burst of messages.
+     */
+    private final Semaphore apiConcurrencyLimiter = new Semaphore(30);
 
     /**
      * Store results for aggregation by content hash.
@@ -233,7 +240,19 @@ public class ContentRoutingServiceImpl implements ContentRoutingService {
         try {
             log.debug("Starting agent {} for hash={}", processor.getAgentType(), contentHash);
 
-            AgentResult result = processor.process(contentMessage);
+            // Acquire semaphore to limit concurrent DashScope API calls
+            apiConcurrencyLimiter.acquire();
+
+            AgentResult result;
+            try {
+                // Execute with timeout enforcement
+                long agentTimeoutMs = getAgentTimeoutMs(processor.getAgentType());
+                result = CompletableFuture.supplyAsync(() -> processor.process(contentMessage), executor)
+                        .get(agentTimeoutMs, TimeUnit.MILLISECONDS);
+            } finally {
+                apiConcurrencyLimiter.release();
+            }
+
             results.put(processor.getAgentType(), result);
 
             long duration = System.currentTimeMillis() - startTime;
@@ -246,6 +265,29 @@ public class ContentRoutingServiceImpl implements ContentRoutingService {
                         processor.getAgentType(), contentHash, duration, result.getErrorMessage());
             }
 
+        } catch (TimeoutException e) {
+            long duration = System.currentTimeMillis() - startTime;
+            AgentResult failureResult = AgentResult.builder()
+                    .agentType(processor.getAgentType())
+                    .contentHash(contentHash)
+                    .success(false)
+                    .errorMessage("Agent timed out after " + duration + "ms")
+                    .durationMs(duration)
+                    .build();
+            results.put(processor.getAgentType(), failureResult);
+            log.warn("Agent {} timed out for hash={} in {}ms",
+                    processor.getAgentType(), contentHash, duration);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            long duration = System.currentTimeMillis() - startTime;
+            AgentResult failureResult = AgentResult.builder()
+                    .agentType(processor.getAgentType())
+                    .contentHash(contentHash)
+                    .success(false)
+                    .errorMessage("Agent interrupted")
+                    .durationMs(duration)
+                    .build();
+            results.put(processor.getAgentType(), failureResult);
         } catch (Exception e) {
             long duration = System.currentTimeMillis() - startTime;
 
@@ -263,6 +305,17 @@ public class ContentRoutingServiceImpl implements ContentRoutingService {
             log.error("Agent {} threw exception for hash={} in {}ms",
                     processor.getAgentType(), contentHash, duration, e);
         }
+    }
+
+    /**
+     * Get configured timeout for a specific agent type.
+     */
+    private long getAgentTimeoutMs(AgentResult.AgentType agentType) {
+        return switch (agentType) {
+            case ANALYSIS -> properties.getAgents().getAnalysis().getTimeout();
+            case SUMMARY -> properties.getAgents().getSummary().getTimeout();
+            case CLASSIFICATION -> properties.getAgents().getClassification().getTimeout();
+        };
     }
 
     /**

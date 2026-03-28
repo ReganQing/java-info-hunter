@@ -141,6 +141,7 @@ public class News {
     @NotBlank(message = "Language cannot be blank")
     @Size(max = 10, message = "Language must not exceed 10 characters")
     @Column(nullable = false, length = 10)
+    @Builder.Default
     private String language = "en";
 
     /**
@@ -168,6 +169,7 @@ public class News {
      */
     @NotNull(message = "View count cannot be null")
     @Column(nullable = false)
+    @Builder.Default
     private Long viewCount = 0L;
 
     /**
@@ -175,6 +177,7 @@ public class News {
      */
     @NotNull(message = "Like count cannot be null")
     @Column(nullable = false)
+    @Builder.Default
     private Integer likeCount = 0;
 
     /**
@@ -182,6 +185,7 @@ public class News {
      */
     @NotNull(message = "Share count cannot be null")
     @Column(nullable = false)
+    @Builder.Default
     private Integer shareCount = 0;
 
     /**
@@ -189,6 +193,7 @@ public class News {
      */
     @NotNull(message = "Published status cannot be null")
     @Column(nullable = false, name = "is_published")
+    @Builder.Default
     private Boolean isPublished = false;
 
     /**
@@ -196,6 +201,7 @@ public class News {
      */
     @NotNull(message = "Featured status cannot be null")
     @Column(nullable = false, name = "is_featured")
+    @Builder.Default
     private Boolean isFeatured = false;
 
     /**

@@ -4,6 +4,7 @@ import com.ron.javainfohunter.ai.service.ChatService;
 import com.ron.javainfohunter.processor.agent.AgentProcessor;
 import com.ron.javainfohunter.processor.config.ProcessorProperties;
 import com.ron.javainfohunter.processor.dto.AgentResult;
+import com.ron.javainfohunter.processor.util.ContentPreprocessor;
 import com.ron.javainfohunter.dto.RawContentMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -79,11 +80,6 @@ public class ClassificationAgentProcessor implements AgentProcessor {
         "Environment",
         "Other"
     };
-
-    /**
-     * Maximum content length to send to the AI (truncates larger content).
-     */
-    private static final int MAX_CONTENT_LENGTH = 3000;
 
     /**
      * Chat service for AI classification operations.
@@ -220,12 +216,11 @@ public class ClassificationAgentProcessor implements AgentProcessor {
             prompt.append("Source: ").append(content.getRssSourceName()).append("\n");
         }
 
-        // Add content body (truncated)
+        // Add content body (token-aware truncation)
         String rawContent = content.getRawContent();
         if (rawContent != null && !rawContent.isEmpty()) {
-            String truncatedContent = rawContent.length() > MAX_CONTENT_LENGTH
-                ? rawContent.substring(0, MAX_CONTENT_LENGTH) + "..."
-                : rawContent;
+            int maxContentTokens = properties.getAgents().getClassification().getMaxContentTokens();
+            String truncatedContent = ContentPreprocessor.truncateToTokenLimit(rawContent, maxContentTokens);
             prompt.append("\nContent:\n").append(truncatedContent).append("\n");
         }
 

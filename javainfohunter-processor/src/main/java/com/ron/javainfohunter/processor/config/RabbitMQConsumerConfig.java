@@ -629,8 +629,8 @@ public class RabbitMQConsumerConfig {
         factory.setMessageConverter(jsonMessageConverter());
         factory.setAcknowledgeMode(AcknowledgeMode.MANUAL);
         factory.setConcurrentConsumers(3);
-        factory.setMaxConcurrentConsumers(10);
-        factory.setPrefetchCount(20);
+        factory.setMaxConcurrentConsumers(5);
+        factory.setPrefetchCount(5);
 
         log.info("rabbitListenerContainerFactory created successfully");
 

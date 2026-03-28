@@ -15,34 +15,10 @@ spring:
   # RabbitMQ Configuration for Development
   rabbitmq:
     host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:25672}
+    port: ${RABBITMQ_PORT:5672}
     username: ${RABBITMQ_USERNAME:admin}
     password: ${RABBITMQ_PASSWORD:admin123}
-  
-  # Spring AI DashScope Configuration
-  ai:
-    dashscope:
-      api-key: ${DASHSCOPE_API_KEY}
-      chat:
-        enabled: ${AI_CHAT_ENABLED:true}
-        options:
-          model: qwen3.5-plus
-          temperature: 0.7
-
-# Crawler Configuration for Development
-javainfohunter:
-  # AI service is NOT needed for crawler module
-  ai:
-    enabled: false
-
-  crawler:
-    scheduler:
-      initial-delay: 5000  # 5 seconds for faster startup in dev
-      fixed-rate: 300000   # 5 minutes for more frequent crawling in dev
-
-    feed:
-      connection-timeout: 15000  # 15 seconds
-      read-timeout: 30000       # 30 seconds
+    virtual-host: ${RABBITMQ_VHOST:/}
 
 # Logging Configuration for Development
 logging:

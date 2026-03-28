@@ -5,7 +5,7 @@
 **A High-Performance Distributed Information Collection System**
 
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.12-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 Built with **Agent Orchestration** powered by Spring AI and Alibaba DashScope
@@ -227,8 +227,8 @@ http://localhost:8080/swagger-ui.html
 
 ### Core
 - **Java 21** - Virtual Threads, Pattern Matching, Records
-- **Spring Boot 3.3.5** - Application framework
-- **Spring AI 1.0.2** - AI abstraction layer
+- **Spring Boot 3.5.12** - Application framework
+- **Spring AI 1.1.2** - AI abstraction layer
 - **Maven** - Dependency management
 
 ### AI & ML

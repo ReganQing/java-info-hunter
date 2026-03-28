@@ -5,7 +5,7 @@
 **高性能分布式信息采集系统**
 
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)
-[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.3.5-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.12-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 基于 **Agent 编排** 构建 Powered by Spring AI 和阿里云 DashScope
@@ -227,8 +227,8 @@ http://localhost:8080/swagger-ui.html
 
 ### 核心框架
 - **Java 21** - 虚拟线程、模式匹配、Record
-- **Spring Boot 3.3.5** - 应用框架
-- **Spring AI 1.0.2** - AI 抽象层
+- **Spring Boot 3.5.12** - 应用框架
+- **Spring AI 1.1.2** - AI 抽象层
 - **Maven** - 依赖管理
 
 ### AI 与机器学习

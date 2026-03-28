@@ -7,6 +7,7 @@ import com.ron.javainfohunter.ai.agent.core.BaseAgent;
 import com.ron.javainfohunter.processor.agent.AgentProcessor;
 import com.ron.javainfohunter.processor.config.ProcessorProperties;
 import com.ron.javainfohunter.processor.dto.AgentResult;
+import com.ron.javainfohunter.processor.util.ContentPreprocessor;
 import com.ron.javainfohunter.dto.RawContentMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -122,10 +123,11 @@ public class AnalysisAgentProcessor implements AgentProcessor {
      * @return formatted prompt string
      */
     private String buildAnalysisPrompt(RawContentMessage content) {
-        // Truncate content to 5000 characters to avoid token limits
-        String truncatedContent = content.getRawContent() != null && content.getRawContent().length() > 5000
-                ? content.getRawContent().substring(0, 5000) + "..."
-                : (content.getRawContent() != null ? content.getRawContent() : "");
+        int maxContentTokens = properties.getAgents().getAnalysis().getMaxContentTokens();
+
+        // Token-aware truncation preserving sentence boundaries
+        String rawContent = content.getRawContent() != null ? content.getRawContent() : "";
+        String truncatedContent = ContentPreprocessor.truncateToTokenLimit(rawContent, maxContentTokens);
 
         return String.format("""
                 Please analyze the following news article and provide:
