@@ -164,7 +164,7 @@ public class RabbitMQConsumerConfig {
     public static final String AGGREGATED_ROUTING_KEY = "aggregated";
 
     // Dead Letter Routing Keys
-    public static final String RAW_CONTENT_DLQ_ROUTING_KEY = "raw.content.dlq";
+    public static final String RAW_CONTENT_DLQ_ROUTING_KEY = "processor.raw.content.dlq";
     public static final String ANALYSIS_DLQ_ROUTING_KEY = "analysis.dlq";
     public static final String SUMMARY_DLQ_ROUTING_KEY = "summary.dlq";
     public static final String CLASSIFICATION_DLQ_ROUTING_KEY = "classification.dlq";
