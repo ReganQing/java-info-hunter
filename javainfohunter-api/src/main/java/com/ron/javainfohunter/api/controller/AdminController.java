@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import jakarta.annotation.PostConstruct;
 
 /**
  * Admin Controller
@@ -48,6 +49,13 @@ public class AdminController {
     private final AgentService agentService;
 
     private static final int MAX_BATCH_SIZE = 100;
+
+    private Instant applicationStartTime;
+
+    @PostConstruct
+    public void init() {
+        this.applicationStartTime = Instant.now();
+    }
 
     @PostMapping("/crawl/trigger")
     @Operation(summary = "Trigger full crawl", description = "Trigger crawl for all active RSS sources")
@@ -106,7 +114,8 @@ public class AdminController {
                     .triggeredAt(Instant.now())
                     .build();
 
-            return ResponseEntity.ok(ApiResponse.success(response));
+            return ResponseEntity.status(500)
+                    .body(ApiResponse.error("Failed to trigger full crawl: " + e.getMessage()));
         }
     }
 
@@ -179,7 +188,8 @@ public class AdminController {
                     .triggeredAt(Instant.now())
                     .build();
 
-            return ResponseEntity.ok(ApiResponse.success(response));
+            return ResponseEntity.status(500)
+                    .body(ApiResponse.error("Failed to trigger category crawl: " + e.getMessage()));
         }
     }
 
@@ -191,18 +201,24 @@ public class AdminController {
 
         log.info("Triggering crawl for source: {}", sourceId);
 
-        Map<String, Object> result = rssSourceService.triggerCrawl(sourceId);
+        try {
+            Map<String, Object> result = rssSourceService.triggerCrawl(sourceId);
 
-        CrawlTriggerResponse response = CrawlTriggerResponse.builder()
-                .triggered(true)
-                .message("Crawl triggered successfully")
-                .sourcesTriggered(1)
-                .triggeredAt(Instant.now())
-                .taskIds(result.get("taskId") != null ? result.get("taskId").toString() : UUID.randomUUID().toString())
-                .estimatedArticles(10)
-                .build();
+            CrawlTriggerResponse response = CrawlTriggerResponse.builder()
+                    .triggered(true)
+                    .message("Crawl triggered successfully")
+                    .sourcesTriggered(1)
+                    .triggeredAt(Instant.now())
+                    .taskIds(result.get("taskId") != null ? result.get("taskId").toString() : UUID.randomUUID().toString())
+                    .estimatedArticles(10)
+                    .build();
 
-        return ResponseEntity.ok(ApiResponse.success(response, "Source crawl triggered successfully"));
+            return ResponseEntity.ok(ApiResponse.success(response, "Source crawl triggered successfully"));
+        } catch (Exception e) {
+            log.error("Failed to trigger crawl for source: {}", sourceId, e);
+            return ResponseEntity.status(500)
+                    .body(ApiResponse.error("Failed to trigger crawl for source " + sourceId + ": " + e.getMessage()));
+        }
     }
 
     @GetMapping("/status")
@@ -258,7 +274,7 @@ public class AdminController {
                 .totalNews(totalNews)
                 .pendingProcessing(pendingProcessing)
                 .services(services)
-                .uptimeSeconds(System.currentTimeMillis() / 1000) // Simplified uptime
+                .uptimeSeconds(java.time.Duration.between(applicationStartTime, Instant.now()).getSeconds())
                 .version("0.0.1-SNAPSHOT")
                 .build();
 
@@ -285,7 +301,7 @@ public class AdminController {
     @Operation(summary = "Get system metrics", description = "Get system performance metrics")
     public ResponseEntity<ApiResponse<SystemMetricsResponse>> getMetrics() {
         SystemMetricsResponse response = SystemMetricsResponse.builder()
-                .uptime(System.currentTimeMillis() / 1000)
+                .uptime(java.time.Duration.between(applicationStartTime, Instant.now()).getSeconds())
                 .activeConnections(0)
                 .requestRate(List.of())
                 .errorRate(List.of())
