@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -35,6 +36,11 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class NewsServiceImpl implements NewsService {
+
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
+            "publishedAt", "importanceScore", "createdAt", "updatedAt",
+            "viewCount", "likeCount", "shareCount", "readingTimeMinutes"
+    );
 
     private final NewsRepository newsRepository;
 
@@ -150,7 +156,11 @@ public class NewsServiceImpl implements NewsService {
                 ? Sort.Direction.DESC
                 : Sort.Direction.ASC;
 
-        Sort sort = Sort.by(direction, request.getSortBy());
+        String sortBy = ALLOWED_SORT_FIELDS.contains(request.getSortBy())
+                ? request.getSortBy()
+                : "publishedAt";
+
+        Sort sort = Sort.by(direction, sortBy);
         return PageRequest.of(request.getPage(), request.getSize(), sort);
     }
 
