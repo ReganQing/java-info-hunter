@@ -12,7 +12,6 @@ import java.util.List;
  * 专门用于热点话题追踪的协调者 Agent，协调以下 Workers：
  * 1. CrawlerAgent - 爬取最新内容
  * 2. AnalysisAgent - 分析内容趋势
- * 3. AlertAgent - 发送趋势告警
  * </p>
  *
  * @author Ron
@@ -20,7 +19,7 @@ import java.util.List;
  */
 @Slf4j
 @Component
-@ConditionalOnProperty(prefix = "javainfohunter.ai", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "javainfohunter.ai", name = "enabled", havingValue = "true", matchIfMissing = false)
 public class TrendingCoordinatorAgent extends CoordinatorAgent {
 
     /**
@@ -28,8 +27,7 @@ public class TrendingCoordinatorAgent extends CoordinatorAgent {
      */
     private static final String[] DEFAULT_WORKERS = {
         "crawler-agent",
-        "analysis-agent",
-        "alert-agent"
+        "analysis-agent"
     };
 
     /**
@@ -65,8 +63,7 @@ public class TrendingCoordinatorAgent extends CoordinatorAgent {
         String taskDescription = String.format(
             "Track trending topic: %s. " +
             "1. Crawl latest content about this topic. " +
-            "2. Analyze trends and patterns. " +
-            "3. Send alerts if significant trends detected.",
+            "2. Analyze trends and patterns.",
             topic
         );
 
