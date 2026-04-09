@@ -3,6 +3,7 @@ package com.ron.javainfohunter.ai.tool.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ron.javainfohunter.ai.agent.coordinator.AgentManager;
 import com.ron.javainfohunter.ai.agent.coordinator.pattern.TaskDelegation;
 import com.ron.javainfohunter.ai.agent.coordinator.pattern.WorkerResult;
 import com.ron.javainfohunter.ai.tool.annotation.Tool;
@@ -29,9 +30,11 @@ import java.util.Map;
 public class CoordinatorTools {
 
     private final ObjectMapper objectMapper;
+    private final AgentManager agentManager;
 
-    public CoordinatorTools() {
+    public CoordinatorTools(AgentManager agentManager) {
         this.objectMapper = new ObjectMapper();
+        this.agentManager = agentManager;
     }
 
     /**
@@ -154,8 +157,8 @@ public class CoordinatorTools {
         log.debug("Getting available workers");
 
         try {
-            // 简化实现：返回示例 Workers
-            List<String> workers = List.of("worker1", "worker2", "worker3");
+            // Query AgentManager for actually registered agents
+            List<String> workers = agentManager.getAgentNames();
 
             StringBuilder sb = new StringBuilder();
             sb.append("Available workers (").append(workers.size()).append("):\n");
