@@ -6,6 +6,7 @@ import com.ron.javainfohunter.ai.agent.coordinator.CollaborationPattern;
 import com.ron.javainfohunter.ai.agent.coordinator.CoordinationResult;
 import com.ron.javainfohunter.ai.agent.coordinator.TaskCoordinator;
 import lombok.extern.slf4j.Slf4j;
+import jakarta.annotation.PreDestroy;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -344,7 +345,9 @@ public class TaskCoordinatorImpl implements TaskCoordinator {
     /**
      * 关闭资源
      */
+    @PreDestroy
     public void shutdown() {
+        log.info("Shutting down TaskCoordinator executor service");
         executor.shutdown();
     }
 }
