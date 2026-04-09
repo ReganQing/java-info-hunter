@@ -92,7 +92,9 @@ javainfohunter:
     cors:
       enabled: true
       allowed-origins:
-        - "*"  # Allow all origins in development
+        - "http://localhost:5173"  # Vite dev server
+        - "http://localhost:3000"  # Alternative dev port
+        - "*"  # Allow all origins in development (remove in production)
       allowed-methods:
         - GET
         - POST
