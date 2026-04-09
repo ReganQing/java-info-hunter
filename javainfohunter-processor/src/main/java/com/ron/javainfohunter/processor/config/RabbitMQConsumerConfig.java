@@ -595,9 +595,9 @@ public class RabbitMQConsumerConfig {
         Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter();
         converter.setAlwaysConvertToInferredType(false);
 
-        // Trust all packages for cross-module communication
+        // Trust specific packages for cross-module communication
         DefaultClassMapper classMapper = new DefaultClassMapper();
-        classMapper.setTrustedPackages("*");
+        classMapper.setTrustedPackages("com.ron.javainfohunter.dto");
 
         // Map shared RawContentMessage class
         java.util.Map<String, Class<?>> idClassMapping = new java.util.HashMap<>();

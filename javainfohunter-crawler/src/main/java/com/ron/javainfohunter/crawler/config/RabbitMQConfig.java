@@ -359,7 +359,7 @@ public class RabbitMQConfig {
 
         // Configure ClassMapper for consistent serialization with processor module
         DefaultClassMapper classMapper = new DefaultClassMapper();
-        classMapper.setTrustedPackages("*");
+        classMapper.setTrustedPackages("com.ron.javainfohunter.dto");
         java.util.Map<String, Class<?>> idClassMapping = new java.util.HashMap<>();
         idClassMapping.put("com.ron.javainfohunter.dto.RawContentMessage",
                           com.ron.javainfohunter.dto.RawContentMessage.class);
