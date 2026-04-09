@@ -149,13 +149,6 @@ public abstract class BaseAgent {
 
         try {
             while (currentStep.get() < maxSteps && agentState == AgentState.RUNNING && !cancelled.get()) {
-                if (cancelled.get()) {
-                    log.info("Agent {} execution cancelled at step {}", name, currentStep.get());
-                    agentState = AgentState.FINISHED;
-                    results.add("Execution cancelled at step " + currentStep.get());
-                    break;
-                }
-
                 log.debug("Agent {} executing step {}/{}", name, currentStep.get() + 1, maxSteps);
                 String stepResult = step();
                 String result = "Step" + currentStep.get() + ": " + stepResult;
