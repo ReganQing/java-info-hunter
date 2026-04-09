@@ -1,5 +1,6 @@
 package com.ron.javainfohunter.api.controller;
 
+import com.ron.javainfohunter.api.aspect.RateLimit;
 import com.ron.javainfohunter.api.dto.ApiResponse;
 import com.ron.javainfohunter.api.dto.request.RssSourceRequest;
 import com.ron.javainfohunter.api.dto.response.RssSourceResponse;
@@ -40,6 +41,7 @@ public class RssSourceController {
 
     @PostMapping
     @Operation(summary = "Create RSS source", description = "Create a new RSS subscription source")
+    @RateLimit(keyType = RateLimit.KeyType.IP, limit = 20, window = @RateLimit.Window(value = 1, unit = RateLimit.TimeUnit.MINUTES))
     public ResponseEntity<ApiResponse<RssSourceResponse>> createSource(
             @Valid @RequestBody RssSourceRequest request) {
         log.info("Creating RSS source: {}", request.getName());
@@ -81,6 +83,7 @@ public class RssSourceController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update RSS source", description = "Update an existing RSS source")
+    @RateLimit(keyType = RateLimit.KeyType.IP, limit = 20, window = @RateLimit.Window(value = 1, unit = RateLimit.TimeUnit.MINUTES))
     public ResponseEntity<ApiResponse<RssSourceResponse>> updateSource(
             @Parameter(description = "RSS source ID")
             @PathVariable Long id,
@@ -92,6 +95,7 @@ public class RssSourceController {
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete RSS source", description = "Delete an RSS source")
+    @RateLimit(keyType = RateLimit.KeyType.IP, limit = 10, window = @RateLimit.Window(value = 1, unit = RateLimit.TimeUnit.MINUTES))
     public ResponseEntity<ApiResponse<Void>> deleteSource(
             @Parameter(description = "RSS source ID")
             @PathVariable Long id) {
@@ -104,6 +108,7 @@ public class RssSourceController {
 
     @PostMapping("/{id}/crawl")
     @Operation(summary = "Trigger manual crawl", description = "Manually trigger a crawl task for the RSS source")
+    @RateLimit(keyType = RateLimit.KeyType.IP, limit = 10, window = @RateLimit.Window(value = 1, unit = RateLimit.TimeUnit.MINUTES))
     public ResponseEntity<ApiResponse<Map<String, Object>>> triggerCrawl(
             @Parameter(description = "RSS source ID")
             @PathVariable Long id) {

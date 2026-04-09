@@ -1,5 +1,6 @@
 package com.ron.javainfohunter.api.controller;
 
+import com.ron.javainfohunter.api.aspect.RateLimit;
 import com.ron.javainfohunter.api.dto.ApiResponse;
 import com.ron.javainfohunter.api.dto.response.AgentStatsResponse;
 import com.ron.javainfohunter.api.dto.response.CrawlTriggerResponse;
@@ -59,6 +60,7 @@ public class AdminController {
 
     @PostMapping("/crawl/trigger")
     @Operation(summary = "Trigger full crawl", description = "Trigger crawl for all active RSS sources")
+    @RateLimit(keyType = RateLimit.KeyType.IP, limit = 5, window = @RateLimit.Window(value = 1, unit = RateLimit.TimeUnit.MINUTES))
     public ResponseEntity<ApiResponse<CrawlTriggerResponse>> triggerFullCrawl() {
         log.info("Triggering full crawl for all active sources");
 
@@ -121,6 +123,7 @@ public class AdminController {
 
     @PostMapping("/crawl-by-category")
     @Operation(summary = "Trigger category crawl", description = "Trigger crawl for all RSS sources in a specific category")
+    @RateLimit(keyType = RateLimit.KeyType.IP, limit = 10, window = @RateLimit.Window(value = 1, unit = RateLimit.TimeUnit.MINUTES))
     public ResponseEntity<ApiResponse<CrawlTriggerResponse>> triggerCategoryCrawl(
             @RequestBody Map<String, String> request) {
 
@@ -195,6 +198,7 @@ public class AdminController {
 
     @PostMapping("/crawl/{sourceId}")
     @Operation(summary = "Trigger single source crawl", description = "Trigger crawl for a specific RSS source")
+    @RateLimit(keyType = RateLimit.KeyType.IP, limit = 20, window = @RateLimit.Window(value = 1, unit = RateLimit.TimeUnit.MINUTES))
     public ResponseEntity<ApiResponse<CrawlTriggerResponse>> triggerSourceCrawl(
             @Parameter(description = "RSS source ID")
             @PathVariable Long sourceId) {
