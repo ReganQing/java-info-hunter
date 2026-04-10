@@ -1,5 +1,6 @@
 package com.ron.javainfohunter.ai.tool.impl;
 
+import com.ron.javainfohunter.ai.agent.coordinator.AgentManager;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -8,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
 /**
  * Security tests for CoordinatorTools JSON parsing
@@ -26,7 +28,8 @@ class CoordinatorToolsSecurityTest {
 
     @BeforeEach
     void setUp() {
-        tools = new CoordinatorTools();
+        AgentManager agentManager = mock(AgentManager.class);
+        tools = new CoordinatorTools(agentManager);
     }
 
     // ==================== parseWorkerTasksJson Tests ====================
