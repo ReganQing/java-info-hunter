@@ -109,6 +109,15 @@ logging:
 javainfohunter:
   ai:
     enabled: false  # Disable AI features for API service (enable only when needed)
+  security:
+    jwt:
+      secret: ${JWT_SECRET}
+      access-token-expiry: ${JWT_ACCESS_EXPIRY:900000}   # 15 minutes
+      refresh-token-expiry: ${JWT_REFRESH_EXPIRY:604800000} # 7 days
+    initial-admin:
+      username: ${ADMIN_USERNAME:admin}
+      password: ${ADMIN_PASSWORD:}
+      email: ${ADMIN_EMAIL:admin@javainfohunter.local}
   api:
     cors:
       enabled: true

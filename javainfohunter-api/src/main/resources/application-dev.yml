@@ -107,3 +107,12 @@ javainfohunter:
         - "*"
       allow-credentials: false  # Must be false when using wildcard origins
       max-age: 3600
+  security:
+    jwt:
+      secret: dev-only-secret-key-must-be-at-least-32-characters-long-for-hmac
+      access-token-expiry: 86400000  # 24 hours in dev
+      refresh-token-expiry: 604800000 # 7 days
+    initial-admin:
+      username: admin
+      password: admin123
+      email: admin@javainfohunter.local
