@@ -2,6 +2,7 @@ package com.ron.javainfohunter.api.service;
 
 import com.ron.javainfohunter.api.dto.request.NewsQueryRequest;
 import com.ron.javainfohunter.api.dto.response.NewsResponse;
+import com.ron.javainfohunter.api.dto.response.NewsStatsResponse;
 import com.ron.javainfohunter.api.dto.response.SimilarNewsResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -46,6 +47,16 @@ public interface NewsService {
     Page<NewsResponse> searchNews(String query, Pageable pageable);
 
     /**
+     * Full-text search news with language-aware FTS
+     *
+     * @param query    Search query
+     * @param language Content language filter (null for all)
+     * @param pageable Pagination information
+     * @return Paginated list of matching news
+     */
+    Page<NewsResponse> searchNews(String query, String language, Pageable pageable);
+
+    /**
      * Get similar news based on shared topics/tags
      *
      * @param id   News ID
@@ -70,4 +81,11 @@ public interface NewsService {
      * @return Paginated list of news in the category
      */
     Page<NewsResponse> getNewsByCategory(String category, Pageable pageable);
+
+    /**
+     * Get news statistics (category and sentiment breakdown)
+     *
+     * @return News statistics response
+     */
+    NewsStatsResponse getNewsStats();
 }

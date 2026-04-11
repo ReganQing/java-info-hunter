@@ -2,6 +2,7 @@ package com.ron.javainfohunter.api.controller;
 
 import com.ron.javainfohunter.api.dto.ApiResponse;
 import com.ron.javainfohunter.api.dto.response.NewsResponse;
+import com.ron.javainfohunter.api.dto.response.NewsStatsResponse;
 import com.ron.javainfohunter.api.dto.response.SimilarNewsResponse;
 import com.ron.javainfohunter.api.service.NewsService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -98,24 +99,26 @@ public class NewsController {
     }
 
     @GetMapping("/search")
-    @Operation(summary = "Full-text search news", description = "Search news by title, summary, or content")
+    @Operation(summary = "Full-text search news", description = "Search news by title, summary, or content with Chinese language support")
     public ResponseEntity<ApiResponse<Page<NewsResponse>>> searchNews(
             @Parameter(description = "Search query")
             @RequestParam @NotBlank String query,
+            @Parameter(description = "Content language filter (e.g., 'zh' for Chinese, 'en' for English)")
+            @RequestParam(required = false) String language,
             @Parameter(description = "Page number (0-based)")
             @RequestParam(defaultValue = "0") @Min(0) int page,
             @Parameter(description = "Page size (1-100)")
             @RequestParam(defaultValue = "20") @Min(1) @Max(100) int size) {
 
-        log.debug("Searching news with query: {}", query);
+        log.debug("Searching news with query: {}, language: {}", query, language);
 
         if (query.trim().isEmpty()) {
             return ResponseEntity.badRequest()
                     .body(ApiResponse.error("Search query cannot be empty"));
         }
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("publishedAt").descending());
-        Page<NewsResponse> results = newsService.searchNews(query, pageable);
+        Pageable pageable = PageRequest.of(page, size);
+        Page<NewsResponse> results = newsService.searchNews(query, language, pageable);
 
         return ResponseEntity.ok(ApiResponse.success(results));
     }
@@ -142,6 +145,14 @@ public class NewsController {
         log.debug("Getting {} trending news", limit);
         List<NewsResponse> trendingNews = newsService.getTrendingNews(limit);
         return ResponseEntity.ok(ApiResponse.success(trendingNews));
+    }
+
+    @GetMapping("/stats")
+    @Operation(summary = "Get news statistics", description = "Get category and sentiment statistics for published news")
+    public ResponseEntity<ApiResponse<NewsStatsResponse>> getNewsStats() {
+        log.debug("Getting news statistics");
+        NewsStatsResponse response = newsService.getNewsStats();
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 
     @GetMapping("/category/{category}")

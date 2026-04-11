@@ -394,4 +394,32 @@ public interface NewsRepository extends JpaRepository<News, Long> {
            "AND n.summary IS NOT NULL AND n.summary != '' " +
            "ORDER BY n.createdAt DESC")
     Page<News> findUnpublishedReadyForReview(Pageable pageable);
+
+    /**
+     * Full-text search using PostgreSQL tsvector/tsquery with Chinese support.
+     * Uses the search_news database function which handles language-aware search.
+     *
+     * @param query Search term
+     * @param language Content language filter (null for all)
+     * @param limit Page size
+     * @param offset Page offset
+     * @return List of result rows: [id, title, summary, category, published_at, rank]
+     */
+    @Query(value = "SELECT * FROM search_news(:query, :language, :limit, :offset)", nativeQuery = true)
+    List<Object[]> searchNewsNative(
+        @Param("query") String query,
+        @Param("language") String language,
+        @Param("limit") int limit,
+        @Param("offset") int offset
+    );
+
+    /**
+     * Count full-text search results using the count_search_news database function.
+     *
+     * @param query Search term
+     * @param language Content language filter (null for all)
+     * @return Total matching count
+     */
+    @Query(value = "SELECT count_search_news(:query, :language)", nativeQuery = true)
+    long countSearchResults(@Param("query") String query, @Param("language") String language);
 }

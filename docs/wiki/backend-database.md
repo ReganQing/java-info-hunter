@@ -171,7 +171,7 @@ jdbc:postgresql://localhost:5432/javainfohunter
 | `idx_news_importance` | B-tree | `importance_score DESC` | 按重要度排序 |
 | `idx_news_slug` | B-tree | `slug` | URL 路由 |
 | `idx_news_created_at` | B-tree | `created_at DESC` | 按创建时间排序 |
-| `idx_news_fulltext` | **GIN** | `to_tsvector('english', title \|\| ' ' \|\| COALESCE(summary, '') \|\| ' ' \|\| COALESCE(full_content, ''))` | 全文搜索 |
+| `idx_news_fulltext` | **GIN** | `fts_vector` (tsvector 列) | 多语言全文搜索（支持中文） |
 
 ---
 
@@ -256,12 +256,39 @@ jdbc:postgresql://localhost:5432/javainfohunter
 -- 数组查询示例
 SELECT * FROM news WHERE 'java' = ANY(keywords);
 
--- 全文搜索示例
+-- 全文搜索示例（使用 search_news 函数，自动处理中文分词）
+SELECT * FROM search_news('machine learning', 'en', 20, 0);
+SELECT * FROM search_news('人工智能', 'zh', 20, 0);
+SELECT * FROM search_news('machine learning');  -- 不限语言
+
+-- 直接使用 tsvector 列查询
 SELECT * FROM news
-WHERE to_tsvector('english', title || ' ' || COALESCE(summary, '') || ' ' || COALESCE(full_content, ''))
-      @@ to_tsquery('english', 'machine & learning')
-ORDER BY ts_rank(...) DESC
+WHERE fts_vector @@ plainto_tsquery('english', 'machine learning')
+ORDER BY ts_rank(fts_vector, plainto_tsquery('english', 'machine learning')) DESC
 LIMIT 20;
+```
+
+### 中文全文搜索配置
+
+系统通过 V3 迁移支持中文全文搜索：
+
+| 组件 | 说明 |
+|------|------|
+| `zhparser` 扩展 | 中文分词器（可选，未安装时自动降级为 `simple` 配置） |
+| `chinese_zh` 配置 | 基于 zhparser 的中文文本搜索配置 |
+| `fts_vector` 列 | news 表上的 tsvector 列，根据 language 字段自动选择分词配置 |
+| `news_tsvector()` 函数 | 根据 language 选择 `chinese_zh`/`simple`/`english` 配置生成 tsvector |
+| `search_news()` 函数 | 语言感知的全文搜索，支持分页和排序 |
+| `count_search_news()` 函数 | 统计搜索结果总数 |
+| `trg_update_news_fts_vector` 触发器 | 自动在 INSERT/UPDATE 时维护 fts_vector 列 |
+
+**安装 zhparser（生产环境推荐）**：
+```bash
+# Ubuntu/Debian
+apt-get install postgresql-16-zhparser
+
+# 或通过 pgxn
+pgxn install zhparser
 ```
 
 ### IVFFlat 索引（向量索引）

@@ -2,6 +2,9 @@ package com.ron.javainfohunter.api.service.impl;
 
 import com.ron.javainfohunter.api.dto.request.NewsQueryRequest;
 import com.ron.javainfohunter.api.dto.response.NewsResponse;
+import com.ron.javainfohunter.api.dto.response.NewsStatsResponse;
+import com.ron.javainfohunter.api.dto.response.NewsStatsResponse.CategoryStats;
+import com.ron.javainfohunter.api.dto.response.NewsStatsResponse.SentimentStats;
 import com.ron.javainfohunter.api.dto.response.SimilarNewsResponse;
 import com.ron.javainfohunter.api.exception.BusinessException;
 import com.ron.javainfohunter.api.exception.ResourceNotFoundException;
@@ -11,6 +14,7 @@ import com.ron.javainfohunter.repository.NewsRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -20,6 +24,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -110,6 +115,29 @@ public class NewsServiceImpl implements NewsService {
     }
 
     @Override
+    public Page<NewsResponse> searchNews(String query, String language, Pageable pageable) {
+        log.debug("Searching news with FTS query: {}, language: {}", query, language);
+
+        int limit = pageable.getPageSize();
+        int offset = (int) pageable.getOffset();
+
+        List<Object[]> results = newsRepository.searchNewsNative(query, language, limit, offset);
+        long total = newsRepository.countSearchResults(query, language);
+
+        List<NewsResponse> content = results.stream()
+                .map(row -> {
+                    Long id = ((Number) row[0]).longValue();
+                    return newsRepository.findByIdWithDetails(id)
+                            .map(this::toResponse)
+                            .orElse(null);
+                })
+                .filter(Objects::nonNull)
+                .toList();
+
+        return new PageImpl<>(content, pageable, total);
+    }
+
+    @Override
     public List<SimilarNewsResponse> getSimilarNews(Long id, int limit) {
         log.debug("Getting similar news for: {}", id);
 
@@ -146,6 +174,39 @@ public class NewsServiceImpl implements NewsService {
         log.debug("Getting news by category: {}", category);
         Page<News> newsPage = newsRepository.findByCategoryAndIsPublishedTrue(category, pageable);
         return newsPage.map(this::toResponse);
+    }
+
+    @Override
+    public NewsStatsResponse getNewsStats() {
+        log.debug("Getting news statistics");
+
+        List<Object[]> categoryData = newsRepository.getStatisticsByCategory();
+        List<Object[]> sentimentData = newsRepository.getStatisticsBySentiment();
+
+        List<CategoryStats> categories = categoryData.stream()
+                .map(row -> CategoryStats.builder()
+                        .category((String) row[0])
+                        .count((Long) row[1])
+                        .build())
+                .collect(Collectors.toList());
+
+        List<SentimentStats> sentiments = sentimentData.stream()
+                .map(row -> SentimentStats.builder()
+                        .sentiment(((News.Sentiment) row[0]).name())
+                        .count((Long) row[1])
+                        .avgScore(row[2] != null ? ((Number) row[2]).doubleValue() : 0.0)
+                        .build())
+                .collect(Collectors.toList());
+
+        long totalPublished = categories.stream()
+                .mapToLong(CategoryStats::getCount)
+                .sum();
+
+        return NewsStatsResponse.builder()
+                .categoryStats(categories)
+                .sentimentStats(sentiments)
+                .totalPublished(totalPublished)
+                .build();
     }
 
     /**

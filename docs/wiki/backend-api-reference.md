@@ -94,13 +94,14 @@ GET /api/v1/news/{id}
 GET /api/v1/news/search
 ```
 
-**描述**：根据标题、摘要或内容搜索新闻。
+**描述**：根据标题、摘要或内容搜索新闻，支持中文全文搜索。
 
 **请求参数**：
 
 | 参数 | 类型 | 必填 | 默认值 | 说明 |
 |------|------|------|--------|------|
 | `query` | String | 是 | - | 搜索关键词（不能为空） |
+| `language` | String | 否 | `null` | 内容语言过滤（如 `zh`=中文, `en`=英文，不传则搜索所有语言） |
 | `page` | int | 否 | `0` | 页码（从 0 开始） |
 | `size` | int | 否 | `20` | 每页大小（1-100） |
 
@@ -109,6 +110,8 @@ GET /api/v1/news/search
 **示例**：
 ```
 GET /api/v1/news/search?query=machine+learning&page=0&size=10
+GET /api/v1/news/search?query=人工智能&language=zh&page=0&size=10
+GET /api/v1/news/search?query=spring+boot&language=en
 ```
 
 ### 1.4 获取相似新闻
