@@ -28,7 +28,7 @@ import jakarta.annotation.PostConstruct;
  */
 @Slf4j
 @Configuration
-@ConditionalOnProperty(prefix = "javainfohunter.ai", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "javainfohunter.ai", name = "enabled", havingValue = "true", matchIfMissing = false)
 public class AgentAutoConfig {
 
     @Autowired
