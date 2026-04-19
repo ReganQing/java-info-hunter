@@ -203,14 +203,15 @@ public class ContentPublisher {
             return false;
         }
 
-        String correlationId = UUID.randomUUID().toString();
-        CorrelationData correlationData = new CorrelationData(correlationId);
-
         int attempt = 0;
         Exception lastException = null;
 
         while (attempt < MAX_RETRY_ATTEMPTS) {
             attempt++;
+
+            String correlationId = UUID.randomUUID().toString();
+            CorrelationData correlationData = new CorrelationData(correlationId);
+
             try {
                 log.debug("Publishing raw content message (attempt {}/{}): correlationId={}, guid={}",
                     attempt, MAX_RETRY_ATTEMPTS, correlationId, message.getGuid());
@@ -272,8 +273,8 @@ public class ContentPublisher {
         }
 
         // All retries exhausted
-        log.error("Failed to publish message after {} attempts: guid={}, correlationId={}",
-            MAX_RETRY_ATTEMPTS, message.getGuid(), correlationId);
+        log.error("Failed to publish message after {} attempts: guid={}",
+            MAX_RETRY_ATTEMPTS, message.getGuid());
         throw new PublishException(
             String.format("Failed to publish message after %d attempts", MAX_RETRY_ATTEMPTS),
             lastException,
