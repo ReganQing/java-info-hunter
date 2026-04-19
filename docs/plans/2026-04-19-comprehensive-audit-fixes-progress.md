@@ -37,7 +37,12 @@
 - **Tests:** JwtServiceTest 2/2 pass
 
 ### Task 4: Fix ExecutorService Resource Leak in Processor
-- **Status:** PENDING
+- **Status:** DONE
+- **Commit:** `56b267f` fix: add @PreDestroy shutdown for virtual thread executor in ContentRoutingService
+- **Files changed:**
+  - `javainfohunter-processor/.../service/impl/ContentRoutingServiceImpl.java` - added @PreDestroy shutdown() with 10s graceful timeout
+  - `javainfohunter-processor/.../service/impl/ContentRoutingServiceImplTest.java` - new test verifying executor shutdown
+- **Tests:** ContentRoutingServiceImplTest 1/1 pass
 
 ---
 
@@ -90,7 +95,7 @@
 
 | Phase | Total | Done | Pending |
 |-------|-------|------|---------|
-| Phase 1 (CRITICAL) | 4 | 3 | 1 |
+| Phase 1 (CRITICAL) | 4 | 4 | 0 |
 | Phase 2 (HIGH) | 15 | 0 | 15 |
 | Phase 3 (MEDIUM) | 16 | 0 | 16 |
-| **Total** | **35** | **3** | **32** |
+| **Total** | **35** | **4** | **31** |
