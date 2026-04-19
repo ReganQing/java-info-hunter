@@ -6,6 +6,8 @@ import com.ron.javainfohunter.entity.RssSource;
 import com.ron.javainfohunter.repository.RssSourceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,14 +29,36 @@ public class CrawlController {
     private final CrawlOrchestrator crawlOrchestrator;
     private final RssSourceRepository rssSourceRepository;
 
+    @Value("${javainfohunter.crawler.api-key:}")
+    private String apiKey;
+
+    private ResponseEntity<Map<String, Object>> unauthorizedResponse() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", false);
+        result.put("message", "Unauthorized: invalid or missing API key");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(result);
+    }
+
+    private boolean isApiValid(String requestApiKey) {
+        if (apiKey == null || apiKey.isBlank()) {
+            return true; // No API key configured, allow all
+        }
+        return apiKey.equals(requestApiKey);
+    }
+
     /**
      * Manually trigger a crawl job for all active RSS sources.
      *
      * @return crawl result
      */
     @PostMapping("/trigger")
-    public ResponseEntity<Map<String, Object>> triggerCrawl() {
+    public ResponseEntity<Map<String, Object>> triggerCrawl(
+            @RequestHeader(value = "X-API-Key", required = false) String requestApiKey) {
         log.info("Manual crawl trigger requested");
+
+        if (!isApiValid(requestApiKey)) {
+            return unauthorizedResponse();
+        }
 
         List<RssSource> sources = rssSourceRepository.findByIsActiveTrue();
         log.info("Found {} active sources for manual crawl", sources.size());
@@ -71,8 +95,14 @@ public class CrawlController {
      * @return crawl result
      */
     @PostMapping("/trigger/{sourceId}")
-    public ResponseEntity<Map<String, Object>> triggerCrawlForSource(@PathVariable Long sourceId) {
+    public ResponseEntity<Map<String, Object>> triggerCrawlForSource(
+            @PathVariable Long sourceId,
+            @RequestHeader(value = "X-API-Key", required = false) String requestApiKey) {
         log.info("Manual crawl trigger requested for source: {}", sourceId);
+
+        if (!isApiValid(requestApiKey)) {
+            return unauthorizedResponse();
+        }
 
         return rssSourceRepository.findById(sourceId)
                 .map(source -> {

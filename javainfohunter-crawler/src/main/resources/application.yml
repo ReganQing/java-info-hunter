@@ -97,6 +97,8 @@ javainfohunter:
   crawler:
     # Enable/disable crawler
     enabled: ${CRAWLER_ENABLED:true}
+    # API key for securing trigger endpoints (empty = no auth required)
+    api-key: ${CRAWLER_API_KEY:}
 
     # Scheduler Configuration
     scheduler:
