@@ -198,9 +198,9 @@ public class AnalysisAgentProcessor implements AgentProcessor {
 
                 // Extract importance
                 if (parsed.containsKey("importance")) {
-                    result.put("importance", parsed.get("importance"));
+                    result.put("importanceScore", parsed.get("importance"));
                 } else {
-                    result.put("importance", 0.5);
+                    result.put("importanceScore", 0.5);
                 }
             } else {
                 // Fallback if JSON parsing fails
@@ -253,7 +253,7 @@ public class AnalysisAgentProcessor implements AgentProcessor {
         result.put("sentimentLabel", "neutral");
         result.put("topics", List.of());
         result.put("keywords", List.of());
-        result.put("importance", 0.5);
+        result.put("importanceScore", 0.5);
         return result;
     }
 }
