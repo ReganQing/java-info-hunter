@@ -69,7 +69,7 @@ public class CoordinatorAgent extends BaseAgent {
     public String step() {
         // 默认实现：检查所有 Worker 是否完成
         if (areAllWorkersComplete()) {
-            setAgentState(AgentState.FINISHED);
+            transitionTo(AgentState.FINISHED);
             return aggregateResults();
         } else {
             return "Waiting for workers to complete. Progress: " +

@@ -166,7 +166,7 @@ public abstract class ToolCallAgent extends ReActAgent {
 
                 if (hasTerminateTool) {
                     log.info("{} 已终止", getName());
-                    setAgentState(AgentState.FINISHED);
+                    transitionTo(AgentState.FINISHED);
                 }
 
                 return results;

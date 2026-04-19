@@ -39,12 +39,12 @@ public abstract class ReActAgent extends BaseAgent {
         try {
             boolean shouldAct = think();
             if (!shouldAct) {
-                setAgentState(AgentState.FINISHED);
+                transitionTo(AgentState.FINISHED);
                 return "思考完成，无需行动";
             }
             return act();
         } catch (Exception e) {
-            setAgentState(AgentState.ERROR);
+            transitionTo(AgentState.ERROR);
             return "步骤执行发生错误：" + e.getMessage();
         }
     }

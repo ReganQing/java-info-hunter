@@ -220,6 +220,25 @@ public abstract class BaseAgent {
     }
 
     /**
+     * Thread-safe state transition. All state changes MUST go through this method.
+     *
+     * @param newState the target state
+     * @return true if transition was allowed, false if it was rejected
+     */
+    protected synchronized boolean transitionTo(AgentState newState) {
+        AgentState current = this.agentState;
+        if (current == AgentState.IDLE && newState == AgentState.RUNNING) {
+            this.agentState = newState;
+            return true;
+        }
+        if (current == AgentState.RUNNING) {
+            this.agentState = newState;
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * 执行单个步骤（子类实现，用于原始 run 方法）
      *
      * @return 步骤结果
