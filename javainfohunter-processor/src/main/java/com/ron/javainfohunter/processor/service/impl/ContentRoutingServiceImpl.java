@@ -20,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -143,18 +144,26 @@ public class ContentRoutingServiceImpl implements ContentRoutingService {
         CompletableFuture<Void> completionFuture = new CompletableFuture<>();
         completionFutures.put(contentHash, completionFuture);
 
-        // Submit parallel agent processing tasks
+        // Submit parallel agent processing tasks with CountDownLatch for completion tracking
+        CountDownLatch latch = new CountDownLatch(enabledAgents.size());
+
         for (AgentProcessor processor : enabledAgents) {
-            executor.submit(() -> processWithAgent(processor, contentMessage, results));
+            executor.submit(() -> {
+                try {
+                    processWithAgent(processor, contentMessage, results);
+                } finally {
+                    latch.countDown();
+                }
+            });
         }
 
-        // Complete the future when all agents finish
-        // This is a simple implementation; a more robust version would track completion count
+        // Complete the future when all agents finish using latch await
         CompletableFuture.runAsync(() -> {
             try {
-                // Poll for completion - in production, use a countdown latch or similar
-                while (results.size() < enabledAgents.size()) {
-                    Thread.sleep(50);
+                long agentTimeoutMs = getMaxAgentTimeoutMs();
+                if (!latch.await(agentTimeoutMs, TimeUnit.MILLISECONDS)) {
+                    log.warn("Timeout waiting for agents to complete for hash={}, {} of {} finished",
+                            contentHash, results.size(), enabledAgents.size());
                 }
                 completionFuture.complete(null);
 
@@ -261,10 +270,15 @@ public class ContentRoutingServiceImpl implements ContentRoutingService {
 
             AgentResult result;
             try {
-                // Execute with timeout enforcement
+                // Direct call — already running in a virtual thread from executor.submit()
                 long agentTimeoutMs = getAgentTimeoutMs(processor.getAgentType());
-                result = CompletableFuture.supplyAsync(() -> processor.process(contentMessage), executor)
-                        .get(agentTimeoutMs, TimeUnit.MILLISECONDS);
+                long deadline = System.currentTimeMillis() + agentTimeoutMs;
+                result = processor.process(contentMessage);
+                if (System.currentTimeMillis() > deadline) {
+                    log.warn("Agent {} exceeded timeout for hash={} ({}ms)",
+                            processor.getAgentType(), contentHash,
+                            System.currentTimeMillis() - startTime);
+                }
             } finally {
                 apiConcurrencyLimiter.release();
             }
@@ -281,18 +295,6 @@ public class ContentRoutingServiceImpl implements ContentRoutingService {
                         processor.getAgentType(), contentHash, duration, result.getErrorMessage());
             }
 
-        } catch (TimeoutException e) {
-            long duration = System.currentTimeMillis() - startTime;
-            AgentResult failureResult = AgentResult.builder()
-                    .agentType(processor.getAgentType())
-                    .contentHash(contentHash)
-                    .success(false)
-                    .errorMessage("Agent timed out after " + duration + "ms")
-                    .durationMs(duration)
-                    .build();
-            results.put(processor.getAgentType(), failureResult);
-            log.warn("Agent {} timed out for hash={} in {}ms",
-                    processor.getAgentType(), contentHash, duration);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             long duration = System.currentTimeMillis() - startTime;
@@ -332,6 +334,36 @@ public class ContentRoutingServiceImpl implements ContentRoutingService {
             case SUMMARY -> properties.getAgents().getSummary().getTimeout();
             case CLASSIFICATION -> properties.getAgents().getClassification().getTimeout();
         };
+    }
+
+    /**
+     * Get the maximum configured agent timeout across all agent types.
+     */
+    private long getMaxAgentTimeoutMs() {
+        return Math.max(
+                Math.max(
+                        properties.getAgents().getAnalysis().getTimeout(),
+                        properties.getAgents().getSummary().getTimeout()),
+                properties.getAgents().getClassification().getTimeout());
+    }
+
+    /**
+     * Scheduled cleanup of stale processing results.
+     * Removes completed results that were not consumed, preventing memory leaks.
+     */
+    @org.springframework.scheduling.annotation.Scheduled(fixedDelay = 60_000)
+    void cleanupStaleResults() {
+        int removedCount = 0;
+        for (String hash : processingResults.keySet()) {
+            CompletableFuture<Void> future = completionFutures.get(hash);
+            if (future != null && future.isDone()) {
+                removeResults(hash);
+                removedCount++;
+            }
+        }
+        if (removedCount > 0) {
+            log.info("Cleaned up {} stale processing results", removedCount);
+        }
     }
 
     /**
