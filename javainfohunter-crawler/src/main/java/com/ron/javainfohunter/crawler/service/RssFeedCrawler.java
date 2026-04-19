@@ -185,8 +185,9 @@ public class RssFeedCrawler {
         try {
             URL feedUrl = new URL(url);
 
-            // Configure connection with timeouts
+            // Configure connection with timeouts and redirect following
             connection = (HttpURLConnection) feedUrl.openConnection();
+            connection.setInstanceFollowRedirects(true);
             connection.setConnectTimeout(crawlerProperties.getFeed().getConnectionTimeout());
             connection.setReadTimeout(crawlerProperties.getFeed().getReadTimeout());
             connection.setRequestProperty("User-Agent", crawlerProperties.getFeed().getUserAgent());
