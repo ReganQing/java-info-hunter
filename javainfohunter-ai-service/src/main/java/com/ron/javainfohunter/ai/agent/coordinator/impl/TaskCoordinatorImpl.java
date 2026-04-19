@@ -158,7 +158,7 @@ public class TaskCoordinatorImpl implements TaskCoordinator {
                                 BaseAgent worker = agentManager.getAgent(workerId).orElseThrow();
                                 log.info("Master-Worker: Executing worker {}", workerId);
 
-                                String output = worker.run(taskDescription);
+                                String output = worker.runConcurrent(taskDescription);
                                 long executionTime = System.currentTimeMillis() - workerStartTime;
 
                                 return new WorkerResultEntry(workerId, true, output, null, executionTime);
@@ -217,7 +217,7 @@ public class TaskCoordinatorImpl implements TaskCoordinator {
             }
 
             // 执行 Master Agent 进行结果汇总
-            String masterOutput = masterAgent.run(taskDescription);
+            String masterOutput = masterAgent.runConcurrent(taskDescription);
             agentOutputs.put(masterAgentId, masterOutput);
 
             Duration duration = Duration.between(startTime, LocalDateTime.now());
@@ -264,7 +264,7 @@ public class TaskCoordinatorImpl implements TaskCoordinator {
                 log.info("Chain: Executing agent {} with input: {}", agentId,
                         currentInput.substring(0, Math.min(100, currentInput.length())));
 
-                String output = agent.run(currentInput);
+                String output = agent.runConcurrent(currentInput);
                 agentOutputs.put(agentId, output);
                 currentInput = output; // 输出作为下一个的输入
             }
@@ -296,7 +296,7 @@ public class TaskCoordinatorImpl implements TaskCoordinator {
                         BaseAgent agent = agentManager.getAgent(agentId).orElseThrow();
                         log.info("Parallel: Executing agent {}", agentId);
 
-                        String output = agent.run(taskDescription);
+                        String output = agent.runConcurrent(taskDescription);
                         return Map.entry(agentId, output);
                     }, executor))
                     .toList();

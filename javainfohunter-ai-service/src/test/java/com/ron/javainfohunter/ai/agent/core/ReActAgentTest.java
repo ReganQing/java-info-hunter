@@ -76,6 +76,7 @@ class ReActAgentTest {
 
     @Test
     void testThinkReturnsFalse() {
+        agent.setAgentState(AgentState.RUNNING);
         // 执行多步直到 think() 返回 false
         for (int i = 0; i < 5; i++) {
             agent.step();
@@ -115,6 +116,7 @@ class ReActAgentTest {
         };
 
         errorAgent.setName("ErrorAgent");
+        errorAgent.setAgentState(AgentState.RUNNING);
         String result = errorAgent.step();
 
         assertTrue(result.contains("错误"));
