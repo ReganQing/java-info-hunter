@@ -19,7 +19,6 @@ import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Agent Service Implementation
@@ -60,57 +59,31 @@ public class AgentServiceImpl implements AgentService {
     public AgentStatsResponse getExecutionStats() {
         log.debug("Getting agent execution statistics");
 
-        List<AgentExecution> allExecutions = agentExecutionRepository.findAll();
+        long total = agentExecutionRepository.count();
+        long running = agentExecutionRepository.countByStatus(AgentExecution.ExecutionStatus.RUNNING);
+        long completed = agentExecutionRepository.countByStatus(AgentExecution.ExecutionStatus.COMPLETED);
+        long failed = agentExecutionRepository.countByStatus(AgentExecution.ExecutionStatus.FAILED);
 
-        long total = allExecutions.size();
-        long running = allExecutions.stream()
-                .filter(e -> e.getStatus() == AgentExecution.ExecutionStatus.RUNNING)
-                .count();
-        long completed = allExecutions.stream()
-                .filter(e -> e.getStatus() == AgentExecution.ExecutionStatus.COMPLETED)
-                .count();
-        long failed = allExecutions.stream()
-                .filter(e -> e.getStatus() == AgentExecution.ExecutionStatus.FAILED)
-                .count();
+        Double avgDuration = agentExecutionRepository.getAverageDuration();
+        long totalTokens = agentExecutionRepository.getTotalTokens();
+        BigDecimal totalCost = agentExecutionRepository.getTotalCost();
+        Map<String, Long> byAgentType = agentExecutionRepository.getCountByAgentType();
 
-        double avgDuration = allExecutions.stream()
-                .filter(e -> e.getDurationMilliseconds() != null)
-                .mapToInt(AgentExecution::getDurationMilliseconds)
-                .average()
-                .orElse(0.0);
-
-        Map<String, Long> byAgentType = allExecutions.stream()
-                .collect(Collectors.groupingBy(
-                        AgentExecution::getAgentType,
-                        Collectors.counting()
-                ));
-
-        Map<String, Long> byStatus = allExecutions.stream()
-                .collect(Collectors.groupingBy(
-                        e -> e.getStatus().name(),
-                        Collectors.counting()
-                ));
-
-        long totalTokens = allExecutions.stream()
-                .filter(e -> e.getTokensUsed() != null)
-                .mapToLong(AgentExecution::getTokensUsed)
-                .sum();
-
-        BigDecimal totalCost = allExecutions.stream()
-                .filter(e -> e.getEstimatedCostUsd() != null)
-                .map(AgentExecution::getEstimatedCostUsd)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        Map<String, Long> byStatus = new HashMap<>();
+        byStatus.put("RUNNING", running);
+        byStatus.put("COMPLETED", completed);
+        byStatus.put("FAILED", failed);
 
         return AgentStatsResponse.builder()
                 .totalExecutions(total)
                 .runningExecutions(running)
                 .completedExecutions(completed)
                 .failedExecutions(failed)
-                .averageDurationMs(avgDuration)
+                .averageDurationMs(avgDuration != null ? avgDuration : 0.0)
                 .executionsByAgentType(byAgentType)
                 .executionsByStatus(byStatus)
                 .totalTokensUsed(totalTokens)
-                .totalEstimatedCostUsd(totalCost.toString())
+                .totalEstimatedCostUsd(totalCost != null ? totalCost.toString() : "0")
                 .build();
     }
 

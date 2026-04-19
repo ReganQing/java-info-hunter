@@ -19,14 +19,20 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for AgentService
@@ -116,39 +122,15 @@ class AgentServiceTest {
     @Test
     @DisplayName("Get execution stats - success")
     void testGetExecutionStats_Success() {
-        List<AgentExecution> completedExecutions = Arrays.asList(
-                testExecution,
-                AgentExecution.builder()
-                        .id(2L)
-                        .agentType("ToolCallAgent")
-                        .status(AgentExecution.ExecutionStatus.COMPLETED)
-                        .durationMilliseconds(45000)
-                        .tokensUsed(1500)
-                        .build()
-        );
-
-        List<AgentExecution> runningExecutions = Arrays.asList(
-                AgentExecution.builder()
-                        .id(3L)
-                        .agentType("ReActAgent")
-                        .status(AgentExecution.ExecutionStatus.RUNNING)
-                        .build()
-        );
-
-        List<AgentExecution> failedExecutions = Arrays.asList(
-                AgentExecution.builder()
-                        .id(4L)
-                        .agentType("BaseAgent")
-                        .status(AgentExecution.ExecutionStatus.FAILED)
-                        .build()
-        );
-
-        when(agentExecutionRepository.findAll()).thenReturn(Arrays.asList(
-                testExecution,
-                completedExecutions.get(1),
-                runningExecutions.get(0),
-                failedExecutions.get(0)
-        ));
+        when(agentExecutionRepository.count()).thenReturn(4L);
+        when(agentExecutionRepository.countByStatus(AgentExecution.ExecutionStatus.RUNNING)).thenReturn(1L);
+        when(agentExecutionRepository.countByStatus(AgentExecution.ExecutionStatus.COMPLETED)).thenReturn(2L);
+        when(agentExecutionRepository.countByStatus(AgentExecution.ExecutionStatus.FAILED)).thenReturn(1L);
+        when(agentExecutionRepository.getAverageDuration()).thenReturn(37500.0);
+        when(agentExecutionRepository.getTotalTokens()).thenReturn(2500L);
+        when(agentExecutionRepository.getTotalCost()).thenReturn(new BigDecimal("0.05"));
+        lenient().when(agentExecutionRepository.getCountByAgentTypeRaw())
+                .thenReturn(List.of(new Object[]{"ToolCallAgent", 2L}, new Object[]{"ReActAgent", 1L}));
 
         AgentStatsResponse response = agentService.getExecutionStats();
 
@@ -158,7 +140,8 @@ class AgentServiceTest {
         assertEquals(2L, response.getCompletedExecutions());
         assertEquals(1L, response.getFailedExecutions());
         assertEquals(37500.0, response.getAverageDurationMs());
+        assertEquals(2500L, response.getTotalTokensUsed());
 
-        verify(agentExecutionRepository, times(1)).findAll();
+        verify(agentExecutionRepository, never()).findAll();
     }
 }

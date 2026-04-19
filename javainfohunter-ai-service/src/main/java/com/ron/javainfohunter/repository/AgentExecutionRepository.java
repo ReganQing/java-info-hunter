@@ -10,7 +10,9 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Repository for Agent Execution entities
@@ -370,4 +372,24 @@ public interface AgentExecutionRepository extends JpaRepository<AgentExecution, 
            "GROUP BY ae.agentId " +
            "ORDER BY AVG(ae.durationMilliseconds) DESC")
     List<Object[]> getAverageExecutionTimeByAgent(@Param("since") Instant since);
+
+    @Query("SELECT AVG(ae.durationMilliseconds) FROM AgentExecution ae WHERE ae.durationMilliseconds IS NOT NULL")
+    Double getAverageDuration();
+
+    @Query("SELECT COALESCE(SUM(ae.tokensUsed), 0) FROM AgentExecution ae")
+    long getTotalTokens();
+
+    @Query("SELECT COALESCE(SUM(ae.estimatedCostUsd), 0) FROM AgentExecution ae")
+    BigDecimal getTotalCost();
+
+    @Query("SELECT ae.agentType, COUNT(ae) FROM AgentExecution ae GROUP BY ae.agentType")
+    List<Object[]> getCountByAgentTypeRaw();
+
+    default Map<String, Long> getCountByAgentType() {
+        Map<String, Long> result = new HashMap<>();
+        for (Object[] row : getCountByAgentTypeRaw()) {
+            result.put((String) row[0], (Long) row[1]);
+        }
+        return result;
+    }
 }
