@@ -3,6 +3,7 @@ package com.ron.javainfohunter.api.service;
 import com.ron.javainfohunter.api.dto.request.LoginRequest;
 import com.ron.javainfohunter.api.dto.request.RegisterRequest;
 import com.ron.javainfohunter.api.dto.response.AuthResponse;
+import com.ron.javainfohunter.api.exception.BusinessException;
 import com.ron.javainfohunter.api.security.JwtService;
 import com.ron.javainfohunter.entity.User;
 import com.ron.javainfohunter.repository.UserRepository;
@@ -32,14 +33,14 @@ public class AuthService {
 
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid username or password"));
+                .orElseThrow(() -> new BusinessException("Invalid username or password"));
 
         if (!user.getIsEnabled()) {
-            throw new IllegalStateException("Account is disabled");
+            throw new BusinessException("Account is disabled");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("Invalid username or password");
+            throw new BusinessException("Invalid username or password");
         }
 
         user.setLastLoginAt(Instant.now());
@@ -50,10 +51,10 @@ public class AuthService {
 
     public AuthResponse register(RegisterRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
-            throw new IllegalArgumentException("Username already exists");
+            throw new BusinessException("Username already exists");
         }
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("Email already exists");
+            throw new BusinessException("Email already exists");
         }
 
         User user = User.builder()
@@ -73,10 +74,10 @@ public class AuthService {
         var storedToken = jwtService.validateRefreshToken(refreshToken);
 
         User user = userRepository.findById(storedToken.getUserId())
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+                .orElseThrow(() -> new BusinessException("User not found"));
 
         if (!user.getIsEnabled()) {
-            throw new IllegalStateException("Account is disabled");
+            throw new BusinessException("Account is disabled");
         }
 
         // Revoke old refresh token and issue new one
