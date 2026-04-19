@@ -2,11 +2,13 @@ package com.ron.javainfohunter.ai.tool.impl;
 
 import com.ron.javainfohunter.ai.tool.annotation.Tool;
 import com.ron.javainfohunter.ai.tool.annotation.ToolParam;
+import com.ron.javainfohunter.ai.tool.observation.ErrorContext;
+import com.ron.javainfohunter.ai.tool.observation.ErrorType;
+import com.ron.javainfohunter.ai.tool.observation.ToolObservation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -14,7 +16,7 @@ import java.util.stream.Collectors;
 /**
  * 文本摘要工具
  * <p>
- * 基于句子重要性提取摘要
+ * 基于句子重要性提取摘要，返回结构化 ToolObservation。
  * </p>
  *
  * @author Ron
@@ -29,15 +31,17 @@ public class TextSummarizationTool {
      *
      * @param text       原始文本
      * @param maxSummary 摘要最大句子数（默认3句）
-     * @return 摘要文本
+     * @return 结构化观测结果
      */
     @Tool(description = "从长文本中提取关键句子生成摘要")
-    public String extractSummary(
+    public ToolObservation extractSummary(
             @ToolParam("要摘要的文本内容") String text,
             @ToolParam("摘要的最大句子数（默认3）") int maxSummary) {
 
         if (text == null || text.trim().isEmpty()) {
-            return "文本为空";
+            return ToolObservation.failure("文本内容为空",
+                new ErrorContext(ErrorType.VALIDATION, "text is null or blank",
+                    "文本内容不能为空", false, "提供有效的文本内容"));
         }
 
         try {
@@ -49,49 +53,65 @@ public class TextSummarizationTool {
                     .toArray(String[]::new);
 
             if (sentences.length == 0) {
-                return "无法提取摘要（文本过短）";
+                return ToolObservation.success("文本过短，无需摘要", text.trim());
             }
 
+            String summaryText;
             if (sentences.length <= maxSummary) {
-                return String.join("。", sentences) + "。";
+                summaryText = String.join("。", sentences) + "。";
+            } else {
+                summaryText = rankAndSelectSentences(sentences, text, maxSummary);
             }
 
-            // 计算句子重要性（词频）
-            Map<String, Integer> wordFreq = calculateWordFrequency(text);
-
-            // 为每个句子打分
-            Map<String, Double> sentenceScores = new HashMap<>();
-            for (String sentence : sentences) {
-                double score = 0;
-                for (Map.Entry<String, Integer> entry : wordFreq.entrySet()) {
-                    if (sentence.contains(entry.getKey())) {
-                        score += entry.getValue();
-                    }
-                }
-                // 归一化：除以句子长度，避免偏向长句
-                sentenceScores.put(sentence, score / sentence.length());
-            }
-
-            // 选择得分最高的句子
-            String[] summary = sentenceScores.entrySet().stream()
-                    .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
-                    .limit(maxSummary)
-                    .map(Map.Entry::getKey)
-                    .toArray(String[]::new);
-
-            // 按原文顺序排列
-            StringBuilder result = new StringBuilder();
-            for (String sentence : sentences) {
-                if (Arrays.asList(summary).contains(sentence)) {
-                    result.append(sentence).append("。");
-                }
-            }
-
-            return result.toString();
+            return ToolObservation.success(
+                "摘要生成完成：从 %d 句中提取 %d 句".formatted(sentences.length,
+                    Math.min(sentences.length, maxSummary)),
+                summaryText
+            );
         } catch (Exception e) {
             log.error("摘要生成失败", e);
-            return "摘要生成失败：" + e.getMessage();
+            return ToolObservation.failure("摘要生成失败",
+                new ErrorContext(ErrorType.FATAL, e.getMessage(),
+                    "摘要生成过程中发生错误", true, "可尝试减少句子数或简化文本"));
         }
+    }
+
+    /**
+     * 基于词频排序句子并选择得分最高的
+     */
+    private String rankAndSelectSentences(String[] sentences, String originalText, int maxSummary) {
+        // 计算句子重要性（词频）
+        Map<String, Integer> wordFreq = calculateWordFrequency(originalText);
+
+        // 为每个句子打分
+        Map<String, Double> sentenceScores = new HashMap<>();
+        for (String sentence : sentences) {
+            double score = 0;
+            for (Map.Entry<String, Integer> entry : wordFreq.entrySet()) {
+                if (sentence.contains(entry.getKey())) {
+                    score += entry.getValue();
+                }
+            }
+            // 归一化：除以句子长度，避免偏向长句
+            sentenceScores.put(sentence, score / sentence.length());
+        }
+
+        // 选择得分最高的句子
+        String[] summary = sentenceScores.entrySet().stream()
+                .sorted(Map.Entry.<String, Double>comparingByValue().reversed())
+                .limit(maxSummary)
+                .map(Map.Entry::getKey)
+                .toArray(String[]::new);
+
+        // 按原文顺序排列
+        StringBuilder result = new StringBuilder();
+        for (String sentence : sentences) {
+            if (Arrays.asList(summary).contains(sentence)) {
+                result.append(sentence).append("。");
+            }
+        }
+
+        return result.toString();
     }
 
     /**
@@ -128,15 +148,17 @@ public class TextSummarizationTool {
      *
      * @param text    文本内容
      * @param topN    返回前 N 个关键词
-     * @return 关键词列表
+     * @return 结构化观测结果
      */
     @Tool(description = "从文本中提取关键词")
-    public String extractKeywords(
+    public ToolObservation extractKeywords(
             @ToolParam("文本内容") String text,
             @ToolParam("返回关键词数量（默认10）") int topN) {
 
         if (text == null || text.trim().isEmpty()) {
-            return "文本为空";
+            return ToolObservation.failure("文本内容为空",
+                new ErrorContext(ErrorType.VALIDATION, "text is null or blank",
+                    "文本内容不能为空", false, "提供有效的文本内容"));
         }
 
         try {
@@ -148,10 +170,17 @@ public class TextSummarizationTool {
                     .map(Map.Entry::getKey)
                     .toArray(String[]::new);
 
-            return String.join("、", keywords);
+            String result = String.join("、", keywords);
+
+            return ToolObservation.success(
+                "提取了 %d 个关键词".formatted(keywords.length),
+                result
+            );
         } catch (Exception e) {
             log.error("关键词提取失败", e);
-            return "关键词提取失败：" + e.getMessage();
+            return ToolObservation.failure("关键词提取失败",
+                new ErrorContext(ErrorType.FATAL, e.getMessage(),
+                    "关键词提取过程中发生错误", true, "可尝试减少关键词数量"));
         }
     }
 }

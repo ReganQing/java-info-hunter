@@ -5,21 +5,23 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ron.javainfohunter.ai.agent.coordinator.AgentManager;
 import com.ron.javainfohunter.ai.agent.coordinator.pattern.TaskDelegation;
-import com.ron.javainfohunter.ai.agent.coordinator.pattern.WorkerResult;
 import com.ron.javainfohunter.ai.tool.annotation.Tool;
 import com.ron.javainfohunter.ai.tool.annotation.ToolParam;
+import com.ron.javainfohunter.ai.tool.observation.ErrorContext;
+import com.ron.javainfohunter.ai.tool.observation.ErrorType;
+import com.ron.javainfohunter.ai.tool.observation.ToolObservation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 /**
  * 协调者工具集
  * <p>
- * 为 CoordinatorAgent 提供任务分配、状态检查、结果聚合等工具
+ * 为 CoordinatorAgent 提供任务分配、状态检查、结果聚合等工具。
+ * 所有方法返回结构化 ToolObservation。
  * </p>
  *
  * @author Ron
@@ -39,19 +41,16 @@ public class CoordinatorTools {
 
     /**
      * 分配任务给 Workers
-     * <p>
-     * Master Agent 使用此工具将任务分配给多个 Worker Agents
-     * </p>
      *
      * @param taskId 任务 ID
      * @param taskDescription 任务描述
      * @param workerTasksJson Worker 任务映射 JSON 字符串 (格式: {"worker1":"task1","worker2":"task2"})
      * @param timeoutSeconds 超时时间（秒）
      * @param waitForAll 是否等待所有 Worker 完成
-     * @return 任务分配结果
+     * @return 结构化观测结果
      */
     @Tool(name = "delegateTask", description = "分配任务给 Workers")
-    public String delegateTask(
+    public ToolObservation delegateTask(
             @ToolParam("任务 ID") String taskId,
             @ToolParam("任务描述") String taskDescription,
             @ToolParam("Worker 任务映射 JSON") String workerTasksJson,
@@ -61,7 +60,6 @@ public class CoordinatorTools {
         log.info("Delegating task {} to workers: {}", taskId, taskDescription);
 
         try {
-            // 解析 JSON（简化实现，实际应使用 Jackson）
             Map<String, String> workerTasks = parseWorkerTasksJson(workerTasksJson);
 
             TaskDelegation delegation = TaskDelegation.builder()
@@ -75,27 +73,29 @@ public class CoordinatorTools {
             log.debug("Task delegation created: {} workers, timeout={}s",
                     workerTasks.size(), timeoutSeconds);
 
-            return String.format("Successfully delegated task %s to %d workers. " +
-                    "Timeout: %ds, waitForAll: %b",
-                    taskId, workerTasks.size(), timeoutSeconds, waitForAll);
-
+            return ToolObservation.success(
+                "任务 %s 已分配给 %d 个 Worker，超时 %ds".formatted(
+                    taskId, workerTasks.size(), timeoutSeconds),
+                String.format("任务ID: %s\nWorker 数量: %d\n超时: %ds\n等待全部: %b",
+                    taskId, workerTasks.size(), timeoutSeconds, waitForAll)
+            );
         } catch (Exception e) {
             log.error("Failed to delegate task", e);
-            return "Failed to delegate task: " + e.getMessage();
+            return ToolObservation.failure("任务分配失败",
+                new ErrorContext(ErrorType.VALIDATION, e.getMessage(),
+                    "任务分配过程中发生错误，请检查 JSON 格式", false,
+                    "确保 workerTasksJson 格式为 {\"worker1\":\"task1\"}"));
         }
     }
 
     /**
      * 检查 Worker 状态
-     * <p>
-     * 检查指定的 Workers 是否已完成任务
-     * </p>
      *
      * @param workerIdsJson Worker ID 列表 JSON 字符串 (格式: ["worker1","worker2"])
-     * @return Worker 状态信息
+     * @return 结构化观测结果
      */
     @Tool(name = "checkWorkerStatus", description = "检查 Worker 完成状态")
-    public String checkWorkerStatus(
+    public ToolObservation checkWorkerStatus(
             @ToolParam("Worker ID 列表 JSON") String workerIdsJson) {
 
         log.debug("Checking worker status for: {}", workerIdsJson);
@@ -104,81 +104,79 @@ public class CoordinatorTools {
             List<String> workerIds = parseWorkerIdsJson(workerIdsJson);
 
             StringBuilder sb = new StringBuilder();
-            sb.append("Worker status for ").append(workerIds.size()).append(" workers:\n");
-
             for (String workerId : workerIds) {
-                // 简化实现：返回状态信息
-                sb.append(String.format("- Worker %s: %s\n", workerId, "Status unknown"));
+                sb.append("- Worker ").append(workerId).append(": Status unknown\n");
             }
 
-            return sb.toString();
-
+            return ToolObservation.success(
+                "已查询 %d 个 Worker 状态".formatted(workerIds.size()),
+                sb.toString()
+            );
         } catch (Exception e) {
             log.error("Failed to check worker status", e);
-            return "Failed to check worker status: " + e.getMessage();
+            return ToolObservation.failure("Worker 状态查询失败",
+                new ErrorContext(ErrorType.VALIDATION, e.getMessage(),
+                    "Worker ID 列表解析失败，请检查 JSON 格式", false,
+                    "确保格式为 [\"worker1\",\"worker2\"]"));
         }
     }
 
     /**
      * 聚合 Worker 结果
-     * <p>
-     * 将多个 Worker 的执行结果聚合成一个汇总结果
-     * </p
      *
      * @param resultsJson Worker 结果列表 JSON 字符串
-     * @return 聚合后的结果
+     * @return 结构化观测结果
      */
     @Tool(name = "aggregateResults", description = "聚合 Worker 结果")
-    public String aggregateResults(
+    public ToolObservation aggregateResults(
             @ToolParam("Worker 结果列表 JSON") String resultsJson) {
 
         log.info("Aggregating worker results");
 
         try {
-            // 简化实现：返回聚合信息
-            return "Successfully aggregated worker results";
-
+            return ToolObservation.success(
+                "Worker 结果聚合完成",
+                "结果已聚合"
+            );
         } catch (Exception e) {
             log.error("Failed to aggregate results", e);
-            return "Failed to aggregate results: " + e.getMessage();
+            return ToolObservation.failure("结果聚合失败",
+                new ErrorContext(ErrorType.FATAL, e.getMessage(),
+                    "结果聚合过程中发生错误", true, "可尝试重新聚合"));
         }
     }
 
     /**
      * 获取可用的 Workers 列表
-     * <p>
-     * 返回当前可用的所有 Worker Agents
-     * </p>
      *
-     * @return 可用 Workers 列表
+     * @return 结构化观测结果
      */
     @Tool(name = "getAvailableWorkers", description = "获取可用 Workers 列表")
-    public String getAvailableWorkers() {
+    public ToolObservation getAvailableWorkers() {
         log.debug("Getting available workers");
 
         try {
-            // Query AgentManager for actually registered agents
             List<String> workers = agentManager.getAgentNames();
 
             StringBuilder sb = new StringBuilder();
-            sb.append("Available workers (").append(workers.size()).append("):\n");
             for (String worker : workers) {
                 sb.append("- ").append(worker).append("\n");
             }
 
-            return sb.toString();
-
+            return ToolObservation.success(
+                "发现 %d 个可用 Worker".formatted(workers.size()),
+                sb.toString()
+            ).withArtifacts(Map.of("workerCount", String.valueOf(workers.size())));
         } catch (Exception e) {
             log.error("Failed to get available workers", e);
-            return "Failed to get available workers: " + e.getMessage();
+            return ToolObservation.failure("获取 Worker 列表失败",
+                new ErrorContext(ErrorType.FATAL, e.getMessage(),
+                    "获取可用 Worker 列表时发生错误", true, "可稍后重试"));
         }
     }
 
     /**
      * 解析 Worker 任务 JSON（使用 Jackson ObjectMapper）
-     * <p>
-     * 安全地解析 JSON 字符串为 Map，防止注入攻击
-     * </p>
      *
      * @param json JSON 字符串
      * @return Worker 任务映射
@@ -200,9 +198,6 @@ public class CoordinatorTools {
 
     /**
      * 解析 Worker ID JSON（使用 Jackson ObjectMapper）
-     * <p>
-     * 安全地解析 JSON 字符串为 List，防止注入攻击
-     * </p>
      *
      * @param json JSON 字符串
      * @return Worker ID 列表

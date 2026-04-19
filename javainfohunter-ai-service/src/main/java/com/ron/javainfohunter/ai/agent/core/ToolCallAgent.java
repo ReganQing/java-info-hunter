@@ -1,6 +1,8 @@
 package com.ron.javainfohunter.ai.agent.core;
 
 import com.alibaba.cloud.ai.dashscope.chat.DashScopeChatOptions;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +36,8 @@ import java.util.stream.Collectors;
 @Data
 @EqualsAndHashCode(callSuper = true)
 public abstract class ToolCallAgent extends ReActAgent {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     /**
      * 可用工具列表
@@ -146,11 +150,10 @@ public abstract class ToolCallAgent extends ReActAgent {
             if (!conversationHistory.isEmpty() &&
                 conversationHistory.getLast() instanceof ToolResponseMessage toolResponseMessage) {
 
-                // 提取工具执行结果
+                // 提取工具执行结果（支持结构化 ToolObservation）
                 String results = toolResponseMessage.getResponses().stream()
                         .filter(Objects::nonNull)
-                        .map(response -> "工具 " + response.name() +
-                                " 完成了任务！结果: " + response.responseData())
+                        .map(response -> formatToolResult(response.name(), response.responseData()))
                         .collect(Collectors.joining("\n"));
 
                 log.info("{} 的 act 结果：{}", getName(), results);
@@ -175,6 +178,55 @@ public abstract class ToolCallAgent extends ReActAgent {
             log.error("{}: 工具执行过程中发生错误", getName(), e);
             return "工具执行失败：" + e.getMessage();
         }
+    }
+
+    /**
+     * 格式化工具结果，支持结构化 ToolObservation 和原始字符串
+     */
+    static String formatToolResult(String toolName, String responseData) {
+        if (responseData == null || responseData.isEmpty()) {
+            return "工具 " + toolName + " 返回空结果";
+        }
+
+        try {
+            JsonNode node = OBJECT_MAPPER.readTree(responseData);
+            if (node.has("status") && node.has("summary")) {
+                String status = node.get("status").asText();
+                String summary = node.get("summary").asText();
+                String details = node.has("details") && !node.get("details").isNull()
+                        ? node.get("details").asText() : "";
+                String nextActions = node.has("nextActions") && !node.get("nextActions").isNull()
+                        ? node.get("nextActions").toString() : "[]";
+
+                StringBuilder sb = new StringBuilder();
+                sb.append("工具 ").append(toolName)
+                  .append(" [").append(status).append("] ")
+                  .append(summary);
+                if (!details.isEmpty()) {
+                    sb.append("\n  详情: ").append(details);
+                }
+                sb.append("\n  建议: ").append(nextActions);
+
+                // 错误上下文
+                if (node.has("error") && !node.get("error").isNull()) {
+                    JsonNode error = node.get("error");
+                    sb.append("\n  错误类型: ").append(error.get("type").asText());
+                    if (error.has("retryable")) {
+                        sb.append(error.get("retryable").asBoolean() ? " (可重试)" : " (不可重试)");
+                    }
+                    if (error.has("retryHint") && !error.get("retryHint").isNull()) {
+                        sb.append("\n  重试建议: ").append(error.get("retryHint").asText());
+                    }
+                }
+
+                return sb.toString();
+            }
+        } catch (Exception e) {
+            log.debug("Non-structured tool result from {}, using raw format", toolName);
+        }
+
+        // 回退到原始字符串格式（兼容未重构的工具）
+        return "工具 " + toolName + " 完成了任务！结果: " + responseData;
     }
 
     @Override
