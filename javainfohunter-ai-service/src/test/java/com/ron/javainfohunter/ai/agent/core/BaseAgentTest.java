@@ -64,8 +64,8 @@ class BaseAgentTest {
         String result = agent.run("Test prompt");
 
         assertTrue(result.contains("Task completed"));
-        assertEquals(AgentState.FINISHED, agent.getAgentState());
-        assertEquals(3, agent.getCurrentStep()); // 使用 getter 获取当前步数
+        assertEquals(AgentState.IDLE, agent.getAgentState());
+        assertEquals(0, agent.getCurrentStep());
     }
 
     @Test
@@ -73,8 +73,8 @@ class BaseAgentTest {
         agent.setMaxSteps(2);
         agent.run("Test prompt");
 
-        // 应该在达到 maxSteps 时停止
-        assertEquals(AgentState.FINISHED, agent.getAgentState());
+        // After run() completes, state resets to IDLE
+        assertEquals(AgentState.IDLE, agent.getAgentState());
     }
 
     @Test
@@ -106,5 +106,36 @@ class BaseAgentTest {
 
         assertTrue(status.contains("TestAgent"));
         assertTrue(status.contains("IDLE"));
+    }
+
+    @Test
+    void run_shouldBeReinvocableAfterCompletion() {
+        String result1 = agent.run("first task");
+        assertNotNull(result1);
+
+        // Second call should not throw IllegalStateException
+        String result2 = agent.run("second task");
+        assertNotNull(result2);
+    }
+
+    @Test
+    void run_shouldResetStateAfterError() {
+        FailingTestAgent failingAgent = new FailingTestAgent();
+        failingAgent.setName("failing");
+        String result = failingAgent.run("task");
+
+        assertTrue(result.startsWith("Error:"));
+        assertEquals(AgentState.IDLE, failingAgent.getAgentState());
+    }
+
+    static class FailingTestAgent extends BaseAgent {
+        @Override
+        public String step() {
+            throw new RuntimeException("Simulated failure");
+        }
+
+        @Override
+        public void cleanup() {
+        }
     }
 }

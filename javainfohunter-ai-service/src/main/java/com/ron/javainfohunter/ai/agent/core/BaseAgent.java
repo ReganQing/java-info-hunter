@@ -179,6 +179,9 @@ public abstract class BaseAgent {
             log.error("Agent {} error at step {}", name, currentStep.get(), e);
             return "Error: " + e.getMessage();
         } finally {
+            agentState = AgentState.IDLE;
+            currentStep.set(0);
+            messages.clear();
             cleanup();
         }
     }
