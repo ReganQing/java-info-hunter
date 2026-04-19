@@ -4,7 +4,7 @@
 
 ---
 
-## Phase 1: CRITICAL Fixes (4 tasks)
+## Phase 1: CRITICAL Fixes (4 tasks) — COMPLETED
 
 ### Task 1: Fix Agent State Reset Between run() Calls
 - **Status:** DONE
@@ -25,7 +25,6 @@
   - `javainfohunter-ai-service/.../agent/specialized/CoordinatorAgent.java` - replaced setAgentState() with transitionTo()
   - `javainfohunter-ai-service/.../agent/core/BaseAgentConcurrencyTest.java` - new concurrency tests
 - **Tests:** BaseAgentConcurrencyTest 2/2 pass
-- **Adaptation:** Test adapted - synchronized block + finally reset already serializes; transitionTo() added for architectural correctness
 
 ### Task 3: Fix JWT Refresh Token Hash Collision
 - **Status:** DONE
@@ -46,25 +45,90 @@
 
 ---
 
-## Phase 2: HIGH Priority Fixes (15 tasks)
+## Phase 2: HIGH Priority Fixes (15 tasks) — COMPLETED
 
 | Task | Description | Status | Commit |
 |------|-------------|--------|--------|
-| 5 | Fix Importance Score Key Mismatch | PENDING | - |
-| 6 | Fix AuthService Exception Types | PENDING | - |
-| 7 | Fix Shared Mutable Agents in TaskCoordinator | PENDING | - |
-| 8 | Fix @Data on JPA Entities | PENDING | - |
-| 9 | Fix AgentServiceImpl OOM with findAll() | PENDING | - |
-| 10 | Secure CrawlController Endpoints | PENDING | - |
-| 11 | Fix ContentPublisher correlationId Reuse | PENDING | - |
-| 12 | Fix HTTP Redirect Following in RssFeedCrawler | PENDING | - |
-| 13 | Fix AiServiceAutoConfiguration matchIfMissing Mismatch | PENDING | - |
-| 14 | Fix Tool Auto-Discovery Not Working | PENDING | - |
-| 15 | Replace Polling with CountDownLatch in ContentRoutingService | PENDING | - |
-| 16 | Fix @Transactional Self-Invocation in TransactionalStoreService | PENDING | - |
-| 17 | Fix Double Virtual Thread Wrapping in Processor | PENDING | - |
-| 18 | Add Memory Management for Result Maps | PENDING | - |
-| 19 | Add Missing Agent ID Validation in Chain/Parallel | PENDING | - |
+| 5 | Fix Importance Score Key Mismatch | DONE | `7391278` |
+| 6 | Fix AuthService Exception Types | DONE | `df47bae` |
+| 7 | Fix Shared Mutable Agents in TaskCoordinator | DONE | `91859a0` |
+| 8 | Fix @Data on JPA Entities | DONE | `d72f370` |
+| 9 | Fix AgentServiceImpl OOM with findAll() | DONE | `d384218` |
+| 10 | Secure CrawlController Endpoints | DONE | `0609aef` |
+| 11 | Fix ContentPublisher correlationId Reuse | DONE | `5da3c62` |
+| 12 | Fix HTTP Redirect Following in RssFeedCrawler | DONE | `9e3d4dd` |
+| 13 | Fix AiServiceAutoConfiguration matchIfMissing Mismatch | DONE | `a53592a` |
+| 14 | Fix Tool Auto-Discovery Not Working | DONE | `1eea3e5` |
+| 15 | Replace Polling with CountDownLatch in ContentRoutingService | DONE | `bc062fa` |
+| 16 | Fix @Transactional Self-Invocation in TransactionalStoreService | DONE | `b8d4326` |
+| 17 | Fix Double Virtual Thread Wrapping in Processor | DONE | `bc062fa` |
+| 18 | Add Memory Management for Result Maps | DONE | `bc062fa` |
+| 19 | Add Missing Agent ID Validation in Chain/Parallel | DONE | `91ee764` |
+
+### Task 5: Fix Importance Score Key Mismatch
+- **Commit:** `7391278` fix: align importance score key to importanceScore for ResultAggregator
+- **Files:** AnalysisAgentProcessor.java, AnalysisAgentProcessorTest.java
+
+### Task 6: Fix AuthService Exception Types
+- **Commit:** `df47bae` fix: use BusinessException in AuthService for proper 400 responses
+- **Files:** AuthService.java, AuthServiceTest.java
+
+### Task 7: Fix Shared Mutable Agents in TaskCoordinator
+- **Commit:** `91859a0` fix: use runConcurrent() in TaskCoordinator for agent reusability
+- **Files:** TaskCoordinatorImpl.java, AgentServiceTest.java
+
+### Task 8: Fix @Data on JPA Entities
+- **Commit:** `d72f370` fix: replace @Data with @Getter/@Setter on JPA entities, equals/hashCode on id only
+- **Files:** News.java, RssSource.java, RawContent.java, AgentExecution.java, EntityEqualityTest.java
+
+### Task 9: Fix AgentServiceImpl OOM with findAll()
+- **Commit:** `d384218` fix: replace findAll() with repository aggregation in AgentServiceImpl
+- **Files:** AgentServiceImpl.java, AgentExecutionRepository.java, AgentServiceImplTest.java
+
+### Task 10: Secure CrawlController Endpoints
+- **Commit:** `0609aef` fix: add API key authentication to CrawlController trigger endpoints
+- **Files:** CrawlController.java, CrawlControllerSecurityTest.java
+
+### Task 11: Fix ContentPublisher correlationId Reuse
+- **Commit:** `5da3c62` fix: generate unique correlationId per retry attempt in ContentPublisher
+- **Files:** ContentPublisher.java
+
+### Task 12: Fix HTTP Redirect Following in RssFeedCrawler
+- **Commit:** `9e3d4dd` fix: enable HTTP redirect following in RssFeedCrawler
+- **Files:** RssFeedCrawler.java
+
+### Task 13: Fix AiServiceAutoConfiguration matchIfMissing Mismatch
+- **Commit:** `a53592a` fix: align AgentAutoConfig matchIfMissing=false with AiServiceAutoConfiguration
+- **Files:** AgentAutoConfig.java
+
+### Task 14: Fix Tool Auto-Discovery Not Working
+- **Commit:** `1eea3e5` fix: ToolManager auto-discovery scans @Tool-annotated methods
+- **Files:** ToolManager.java
+
+### Task 15: Replace Polling with CountDownLatch
+- **Commit:** `bc062fa` (combined with Tasks 17, 18)
+- **Files:** ContentRoutingServiceImpl.java, ContentRoutingServiceImplTest.java
+- Replaced Thread.sleep(50) polling with CountDownLatch + latch.await()
+
+### Task 16: Fix @Transactional Self-Invocation
+- **Commit:** `b8d4326` fix: use TransactionTemplate for independent status update
+- **Files:** TransactionalStoreService.java, TransactionalStoreServiceTest.java, ResultAggregatorImplTest.java
+- Replaced private @Transactional with TransactionTemplate.executeWithoutResult()
+
+### Task 17: Fix Double Virtual Thread Wrapping
+- **Commit:** `bc062fa` (combined with Tasks 15, 18)
+- **Files:** ContentRoutingServiceImpl.java
+- Removed CompletableFuture.supplyAsync() inside executor.submit()
+
+### Task 18: Add Memory Management for Result Maps
+- **Commit:** `bc062fa` (combined with Tasks 15, 17)
+- **Files:** ContentRoutingServiceImpl.java, ContentRoutingServiceImplTest.java
+- Added @Scheduled cleanupStaleResults() every 60s
+
+### Task 19: Add Missing Agent ID Validation
+- **Commit:** `91ee764` fix: add agent ID validation to executeChain and executeParallel
+- **Files:** TaskCoordinatorImpl.java, TaskCoordinatorTest.java
+- Added validateAgentIds() calls to both methods
 
 ---
 
@@ -96,6 +160,6 @@
 | Phase | Total | Done | Pending |
 |-------|-------|------|---------|
 | Phase 1 (CRITICAL) | 4 | 4 | 0 |
-| Phase 2 (HIGH) | 15 | 0 | 15 |
+| Phase 2 (HIGH) | 15 | 15 | 0 |
 | Phase 3 (MEDIUM) | 16 | 0 | 16 |
-| **Total** | **35** | **4** | **31** |
+| **Total** | **35** | **19** | **16** |
