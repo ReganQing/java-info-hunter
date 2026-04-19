@@ -6,8 +6,10 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.Type;
 import org.hibernate.type.SqlTypes;
@@ -31,7 +33,9 @@ import java.util.List;
     @Index(name = "idx_raw_content_publish_date", columnList = "publish_date"),
     @Index(name = "idx_raw_content_crawl_date", columnList = "crawl_date")
 })
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"rssSource"})
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -264,5 +268,17 @@ public class RawContent {
     public void updateEmbedding(List<Double> embedding) {
         this.embedding = embedding;
         this.embeddingGeneratedAt = Instant.now();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof RawContent rawContent)) return false;
+        return id != null && id.equals(rawContent.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

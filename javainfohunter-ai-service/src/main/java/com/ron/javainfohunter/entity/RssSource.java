@@ -7,8 +7,9 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 import java.time.Instant;
 import java.util.List;
@@ -28,7 +29,8 @@ import java.util.List;
     @Index(name = "idx_rss_sources_category", columnList = "category"),
     @Index(name = "idx_rss_sources_last_crawled", columnList = "last_crawled_at")
 })
-@Data
+@Getter
+@Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -224,5 +226,17 @@ public class RssSource {
      */
     public void updateLastCrawled() {
         lastCrawledAt = Instant.now();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof RssSource rssSource)) return false;
+        return id != null && id.equals(rssSource.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }

@@ -6,8 +6,10 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -34,7 +36,9 @@ import java.util.List;
     @Index(name = "idx_agent_executions_correlation_id", columnList = "correlation_id"),
     @Index(name = "idx_agent_executions_agent_time", columnList = "agent_id, start_time")
 })
-@Data
+@Getter
+@Setter
+@ToString(exclude = {"rawContent", "news"})
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
@@ -428,5 +432,17 @@ public class AgentExecution {
     public void updateTokenUsage(Integer tokens, BigDecimal cost) {
         this.tokensUsed = tokens;
         this.estimatedCostUsd = cost;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof AgentExecution that)) return false;
+        return id != null && id.equals(that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return getClass().hashCode();
     }
 }
