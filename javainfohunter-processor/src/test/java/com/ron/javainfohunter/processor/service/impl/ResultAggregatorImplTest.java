@@ -56,6 +56,9 @@ class ResultAggregatorImplTest {
     private NewsRepository newsRepository;
 
     @Mock
+    private org.springframework.transaction.support.TransactionTemplate transactionTemplate;
+
+    @Mock
     private RabbitTemplate rabbitTemplate;
 
     @Mock
@@ -77,7 +80,8 @@ class ResultAggregatorImplTest {
         transactionalStoreService = new TransactionalStoreService(
                 embeddingService,
                 rawContentRepository,
-                newsRepository
+                newsRepository,
+                transactionTemplate
         );
 
         // Inject TransactionalStoreService and RabbitTemplate into ResultAggregatorImpl

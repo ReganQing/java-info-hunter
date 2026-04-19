@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -45,6 +46,7 @@ class TransactionalStoreService {
     private final EmbeddingService embeddingService;
     private final RawContentRepository rawContentRepository;
     private final NewsRepository newsRepository;
+    private final TransactionTemplate transactionTemplate;
 
     /**
      * Store processed content in a single transaction.
@@ -189,13 +191,18 @@ class TransactionalStoreService {
     }
 
     /**
-     * Update RawContent processing status.
+     * Update RawContent processing status in an independent transaction.
+     *
+     * <p>Uses TransactionTemplate instead of @Transactional to avoid the
+     * self-invocation proxy problem where Spring cannot intercept private
+     * method calls within the same class.</p>
      */
-    @Transactional
     private void updateRawContentStatus(String contentHash, RawContent.ProcessingStatus status) {
-        rawContentRepository.findByContentHash(contentHash).ifPresent(rawContent -> {
-            rawContent.setProcessingStatus(status);
-            rawContentRepository.save(rawContent);
+        transactionTemplate.executeWithoutResult(tx -> {
+            rawContentRepository.findByContentHash(contentHash).ifPresent(rawContent -> {
+                rawContent.setProcessingStatus(status);
+                rawContentRepository.save(rawContent);
+            });
         });
     }
 }
