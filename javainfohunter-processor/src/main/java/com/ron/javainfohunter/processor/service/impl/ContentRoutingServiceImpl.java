@@ -7,6 +7,7 @@ import com.ron.javainfohunter.processor.dto.ProcessedContentMessage;
 import com.ron.javainfohunter.dto.RawContentMessage;
 import com.ron.javainfohunter.processor.service.ContentRoutingService;
 import com.ron.javainfohunter.processor.service.ResultAggregator;
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -86,6 +87,21 @@ public class ContentRoutingServiceImpl implements ContentRoutingService {
      */
     private final Map<String, CompletableFuture<Void>> completionFutures =
             new ConcurrentHashMap<>();
+
+    @PreDestroy
+    void shutdown() {
+        log.info("Shutting down content routing executor service");
+        executor.shutdown();
+        try {
+            if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+                log.warn("Executor did not terminate in 10 seconds, forced shutdown");
+            }
+        } catch (InterruptedException e) {
+            executor.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
+    }
 
     @Override
     public void routeToAgents(RawContentMessage contentMessage) {
