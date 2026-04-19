@@ -248,6 +248,13 @@ public class TaskCoordinatorImpl implements TaskCoordinator {
         LocalDateTime startTime = LocalDateTime.now();
 
         try {
+            // Validate agent IDs (security check)
+            try {
+                validateAgentIds(agentIds);
+            } catch (IllegalArgumentException e) {
+                return CoordinationResult.failure("Invalid agent IDs: " + e.getMessage());
+            }
+
             // 验证所有 Agents
             for (String agentId : agentIds) {
                 if (!agentManager.isAgentRegistered(agentId)) {
@@ -283,6 +290,13 @@ public class TaskCoordinatorImpl implements TaskCoordinator {
         LocalDateTime startTime = LocalDateTime.now();
 
         try {
+            // Validate agent IDs (security check)
+            try {
+                validateAgentIds(agentIds);
+            } catch (IllegalArgumentException e) {
+                return CoordinationResult.failure("Invalid agent IDs: " + e.getMessage());
+            }
+
             // 验证所有 Agents
             for (String agentId : agentIds) {
                 if (!agentManager.isAgentRegistered(agentId)) {

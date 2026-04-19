@@ -154,4 +154,48 @@ class TaskCoordinatorTest {
         assertNull(result.getErrorMessage());
         assertNotNull(result.getFinalOutput());
     }
+
+    @Test
+    void testExecuteChainWithInvalidAgentId() {
+        CoordinationResult result = taskCoordinator.executeChain(
+            "Chain task",
+            List.of("agent1", "invalid;id", "agent2")
+        );
+
+        assertFalse(result.isSuccess());
+        assertTrue(result.getErrorMessage().contains("Invalid agent IDs"));
+    }
+
+    @Test
+    void testExecuteChainWithDuplicateAgentIds() {
+        CoordinationResult result = taskCoordinator.executeChain(
+            "Chain task",
+            List.of("agent1", "agent1")
+        );
+
+        assertFalse(result.isSuccess());
+        assertTrue(result.getErrorMessage().contains("Invalid agent IDs"));
+    }
+
+    @Test
+    void testExecuteParallelWithInvalidAgentId() {
+        CoordinationResult result = taskCoordinator.executeParallel(
+            "Parallel task",
+            List.of("agent1", "<script>alert(1)</script>")
+        );
+
+        assertFalse(result.isSuccess());
+        assertTrue(result.getErrorMessage().contains("Invalid agent IDs"));
+    }
+
+    @Test
+    void testExecuteParallelWithDuplicateAgentIds() {
+        CoordinationResult result = taskCoordinator.executeParallel(
+            "Parallel task",
+            List.of("agent1", "agent1")
+        );
+
+        assertFalse(result.isSuccess());
+        assertTrue(result.getErrorMessage().contains("Invalid agent IDs"));
+    }
 }
