@@ -136,6 +136,13 @@ javainfohunter:
         - spring.rabbitmq.port
         - spring.rabbitmq.username
         - spring.rabbitmq.password
+      numeric-ranges:
+        - "spring.datasource.hikari.maximum-pool-size|1|64"
+        - "spring.datasource.hikari.minimum-idle|0|32"
+        - "spring.rabbitmq.listener.simple.concurrency|1|32"
+        - "spring.rabbitmq.listener.simple.max-concurrency|1|32"
+        - "spring.rabbitmq.listener.simple.prefetch|1|200"
+        - "javainfohunter.crawler.scheduler.max-concurrent-sources|1|32"
 
 # Logging Configuration
 logging:

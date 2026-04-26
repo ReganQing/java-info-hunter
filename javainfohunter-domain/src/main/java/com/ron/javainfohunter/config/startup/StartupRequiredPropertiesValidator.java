@@ -29,7 +29,13 @@ public class StartupRequiredPropertiesValidator {
 
     @PostConstruct
     void validate() {
-        if (isTestProfile()) {
+        boolean runInTest = environment.getProperty(
+            "javainfohunter.startup.validation.run-in-test",
+            Boolean.class,
+            false
+        );
+
+        if (isTestProfile() && !runInTest) {
             log.debug("Skipping startup required-property validation in test profile");
             return;
         }
@@ -66,10 +72,123 @@ public class StartupRequiredPropertiesValidator {
             );
         }
 
+        validateNumericRanges();
+
         log.info(
             "Startup required-property validation passed ({} properties)",
             requiredProperties.size()
         );
+    }
+
+    private void validateNumericRanges() {
+        String[] configuredRanges = environment.getProperty(
+            "javainfohunter.startup.validation.numeric-ranges",
+            String[].class,
+            new String[0]
+        );
+        if (configuredRanges.length == 0) {
+            String rawRanges = environment.getProperty("javainfohunter.startup.validation.numeric-ranges");
+            if (StringUtils.hasText(rawRanges)) {
+                configuredRanges = Arrays.stream(rawRanges.split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::hasText)
+                    .toArray(String[]::new);
+            }
+        }
+        List<String> numericRanges = Arrays.asList(configuredRanges);
+
+        if (numericRanges.isEmpty()) {
+            return;
+        }
+
+        for (String ruleText : numericRanges) {
+            if (!StringUtils.hasText(ruleText)) {
+                continue;
+            }
+
+            String[] parts = ruleText.split("\\|", -1);
+            if (parts.length != 3) {
+                throw new IllegalStateException(
+                    "Startup numeric-range validation rule format is invalid: " + ruleText
+                );
+            }
+
+            String key = parts[0].trim();
+            if (!StringUtils.hasText(key)) {
+                throw new IllegalStateException(
+                    "Startup numeric-range validation rule has blank key: " + ruleText
+                );
+            }
+
+            Double min = parseBound(parts[1], key, "min");
+            Double max = parseBound(parts[2], key, "max");
+
+            String value = environment.getProperty(key);
+            if (!StringUtils.hasText(value)) {
+                continue;
+            }
+
+            double numericValue;
+            try {
+                numericValue = Double.parseDouble(value.trim());
+            } catch (NumberFormatException exception) {
+                throw new IllegalStateException(
+                    "Startup numeric-range validation failed: property '"
+                        + key
+                        + "' value '"
+                        + value
+                        + "' is not numeric"
+                );
+            }
+
+            if (min != null && numericValue < min) {
+                throw new IllegalStateException(
+                    "Startup numeric-range validation failed: property '"
+                        + key
+                        + "' value "
+                        + numericValue
+                        + " is below min "
+                        + min
+                );
+            }
+
+            if (max != null && numericValue > max) {
+                throw new IllegalStateException(
+                    "Startup numeric-range validation failed: property '"
+                        + key
+                        + "' value "
+                        + numericValue
+                        + " exceeds max "
+                        + max
+                );
+            }
+        }
+
+        log.info(
+            "Startup numeric-range validation passed ({} rules)",
+            numericRanges.size()
+        );
+    }
+
+    private Double parseBound(String rawBound, String key, String boundName) {
+        String bound = rawBound == null ? "" : rawBound.trim();
+        if (!StringUtils.hasText(bound)) {
+            return null;
+        }
+
+        try {
+            return Double.parseDouble(bound);
+        } catch (NumberFormatException exception) {
+            throw new IllegalStateException(
+                "Startup numeric-range validation failed: property '"
+                    + key
+                    + "' has non-numeric "
+                    + boundName
+                    + " bound '"
+                    + bound
+                    + "'"
+            );
+        }
     }
 
     private boolean isTestProfile() {

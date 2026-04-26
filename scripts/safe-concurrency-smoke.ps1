@@ -1,6 +1,7 @@
 param(
     [string]$Module = "javainfohunter-processor",
     [string]$TestPattern = "ContentRoutingServiceImplTest",
+    [switch]$DisableAlsoMake,
     [int]$CpuThresholdPercent = 85,
     [int]$MemoryThresholdPercent = 85,
     [int]$SampleIntervalSeconds = 3,
@@ -19,12 +20,15 @@ $env:CRAWLER_MAX_CONCURRENT_SOURCES = "4"
 
 $args = @(
     "-pl", $Module,
-    "-am",
     "-Psafe-test",
     "-Dtest=$TestPattern",
     "-Dsurefire.failIfNoSpecifiedTests=false",
     "test"
 )
+
+if (-not $DisableAlsoMake) {
+    $args = @("-pl", $Module, "-am", "-Psafe-test", "-Dtest=$TestPattern", "-Dsurefire.failIfNoSpecifiedTests=false", "test")
+}
 
 $mavenCommand = "mvn.cmd $($args -join ' ')"
 Write-Host "[safe-smoke] Starting: $mavenCommand"
