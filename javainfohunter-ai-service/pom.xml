@@ -22,6 +22,11 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>com.ron</groupId>
+            <artifactId>javainfohunter-domain</artifactId>
+        </dependency>
+
         <!-- Spring Boot 核心 (optional) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

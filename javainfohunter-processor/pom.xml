@@ -21,6 +21,12 @@
     </properties>
 
     <dependencies>
+        <!-- Shared domain module -->
+        <dependency>
+            <groupId>com.ron</groupId>
+            <artifactId>javainfohunter-domain</artifactId>
+        </dependency>
+
         <!-- Spring Boot Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

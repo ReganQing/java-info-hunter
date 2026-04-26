@@ -103,10 +103,10 @@
             <version>${hutool.version}</version>
         </dependency>
 
-        <!-- Internal AI Service Module -->
+        <!-- Shared domain module -->
         <dependency>
             <groupId>com.ron</groupId>
-            <artifactId>javainfohunter-ai-service</artifactId>
+            <artifactId>javainfohunter-domain</artifactId>
         </dependency>
 
         <!-- Spring Boot Actuator for Health Checks -->

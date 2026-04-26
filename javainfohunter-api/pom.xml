@@ -66,10 +66,16 @@
             </exclusions>
         </dependency>
 
-        <!-- Internal AI Service Module -->
+        <!-- Shared domain module -->
         <dependency>
             <groupId>com.ron</groupId>
-            <artifactId>javainfohunter-ai-service</artifactId>
+            <artifactId>javainfohunter-domain</artifactId>
+        </dependency>
+
+        <!-- DashScope auto-config classes referenced by ApiApplication -->
+        <dependency>
+            <groupId>com.alibaba.cloud.ai</groupId>
+            <artifactId>spring-ai-alibaba-starter-dashscope</artifactId>
         </dependency>
 
         <!-- Lombok -->
