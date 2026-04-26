@@ -59,6 +59,16 @@ public class ProcessorProperties {
     private EmbeddingConfig embedding = new EmbeddingConfig();
 
     /**
+     * RabbitMQ listener configuration.
+     */
+    private QueueConfig queue = new QueueConfig();
+
+    /**
+     * Processing concurrency configuration.
+     */
+    private ProcessingConfig processing = new ProcessingConfig();
+
+    /**
      * Agent configuration properties.
      *
      * <p>Contains nested configuration for each agent type, allowing
@@ -191,6 +201,52 @@ public class ProcessorProperties {
          * Default: 1024 dimensions
          */
         private int dimensions = 1024;
+    }
+
+    @Data
+    public static class QueueConfig {
+        /**
+         * Input queue name for raw crawler content.
+         */
+        private String inputQueue = "processor.raw.content.queue";
+
+        /**
+         * Dead letter queue name for failed raw content messages.
+         */
+        private String deadLetterQueue = "processor.dead.letter.queue";
+
+        /**
+         * Maximum retry attempts before sending to DLQ.
+         */
+        private int maxRetries = 3;
+
+        /**
+         * Initial number of RabbitMQ consumers.
+         */
+        private int concurrency = 2;
+
+        /**
+         * Maximum number of RabbitMQ consumers.
+         */
+        private int maxConcurrency = 4;
+
+        /**
+         * Messages prefetched per consumer.
+         */
+        private int prefetch = 3;
+    }
+
+    @Data
+    public static class ProcessingConfig {
+        /**
+         * Maximum concurrent external AI/API calls.
+         */
+        private int apiConcurrencyLimit = 6;
+
+        /**
+         * Maximum queued in-memory content hashes awaiting aggregation.
+         */
+        private int maxQueueSize = 1000;
     }
 
 }

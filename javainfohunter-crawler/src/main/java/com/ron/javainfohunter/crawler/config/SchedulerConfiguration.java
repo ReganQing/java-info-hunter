@@ -82,8 +82,13 @@ public class SchedulerConfiguration {
      * @return ExecutorService backed by virtual threads
      */
     @Bean(name = "crawlExecutor")
-    public java.util.concurrent.ExecutorService crawlExecutor() {
-        log.info("Initializing crawl executor with virtual threads");
-        return Executors.newVirtualThreadPerTaskExecutor();
+    public java.util.concurrent.ExecutorService crawlExecutor(CrawlerProperties crawlerProperties) {
+        int maxConcurrentSources = Math.max(1,
+                crawlerProperties.getScheduler().getMaxConcurrentSources());
+        log.info("Initializing crawl executor with maxConcurrentSources={}", maxConcurrentSources);
+        return Executors.newFixedThreadPool(
+                maxConcurrentSources,
+                Thread.ofVirtual().name("crawl-worker-", 0).factory()
+        );
     }
 }

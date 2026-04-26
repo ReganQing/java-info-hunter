@@ -15,14 +15,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.support.TransactionTemplate;
-
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
+import java.util.function.Consumer;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -90,6 +88,22 @@ class ResultAggregatorImplTest {
                 rabbitTemplate,
                 aggregatorExecutor
         );
+
+        lenient().doAnswer(invocation -> {
+            Object callback = invocation.getArgument(0);
+            org.springframework.transaction.TransactionStatus status =
+                    mock(org.springframework.transaction.TransactionStatus.class);
+
+            if (callback instanceof Consumer<?> consumer) {
+                @SuppressWarnings("unchecked")
+                Consumer<org.springframework.transaction.TransactionStatus> transactionConsumer =
+                        (Consumer<org.springframework.transaction.TransactionStatus>) consumer;
+                transactionConsumer.accept(status);
+            } else if (callback instanceof org.springframework.transaction.support.TransactionCallbackWithoutResult txCallback) {
+                txCallback.doInTransaction(status);
+            }
+            return null;
+        }).when(transactionTemplate).executeWithoutResult(any());
 
         // Create test embedding vector (1536 dimensions as per OpenAI)
         testEmbedding = new float[1536];

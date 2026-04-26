@@ -61,9 +61,9 @@ spring:
     listener:
       simple:
         acknowledge-mode: manual
-        prefetch: 10
-        concurrency: 5
-        max-concurrency: 20
+        prefetch: ${PROCESSOR_RABBITMQ_PREFETCH:3}
+        concurrency: ${PROCESSOR_RABBITMQ_CONCURRENCY:2}
+        max-concurrency: ${PROCESSOR_RABBITMQ_MAX_CONCURRENCY:4}
     connection-timeout: 15000
     cache:
       channel:
@@ -138,6 +138,8 @@ javainfohunter:
       batch-size: ${PROCESSING_BATCH_SIZE:50}
       # Maximum queue size for pending messages
       max-queue-size: ${PROCESSING_MAX_QUEUE_SIZE:1000}
+      # Maximum concurrent external AI/API calls
+      api-concurrency-limit: ${PROCESSING_API_CONCURRENCY_LIMIT:6}
 
     # Queue Configuration
     queue:
@@ -147,6 +149,9 @@ javainfohunter:
       dead-letter-queue: ${DEAD_LETTER_QUEUE:processor.dead.letter.queue}
       # Maximum retry attempts before sending to DLQ
       max-retries: ${QUEUE_MAX_RETRIES:3}
+      concurrency: ${PROCESSOR_RABBITMQ_CONCURRENCY:2}
+      max-concurrency: ${PROCESSOR_RABBITMQ_MAX_CONCURRENCY:4}
+      prefetch: ${PROCESSOR_RABBITMQ_PREFETCH:3}
 
 # Logging Configuration
 logging:

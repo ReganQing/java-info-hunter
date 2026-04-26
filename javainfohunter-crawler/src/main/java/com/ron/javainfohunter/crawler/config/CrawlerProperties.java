@@ -99,6 +99,12 @@ public class CrawlerProperties {
          * Default: 1 hour
          */
         private long fixedRate = 3600000;
+
+        /**
+         * Maximum number of RSS sources crawled concurrently.
+         * Keeps virtual-thread fan-out bounded on developer machines.
+         */
+        private int maxConcurrentSources = 8;
     }
 
     /**

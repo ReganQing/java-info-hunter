@@ -20,6 +20,16 @@ spring:
     password: ${RABBITMQ_PASSWORD:admin123}
     virtual-host: ${RABBITMQ_VHOST:/}
 
+javainfohunter:
+  processor:
+    processing:
+      api-concurrency-limit: ${PROCESSING_API_CONCURRENCY_LIMIT:3}
+      max-queue-size: ${PROCESSING_MAX_QUEUE_SIZE:200}
+    queue:
+      concurrency: ${PROCESSOR_RABBITMQ_CONCURRENCY:1}
+      max-concurrency: ${PROCESSOR_RABBITMQ_MAX_CONCURRENCY:2}
+      prefetch: ${PROCESSOR_RABBITMQ_PREFETCH:2}
+
 # Logging Configuration for Development
 logging:
   level:

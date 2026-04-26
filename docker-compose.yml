@@ -1,4 +1,26 @@
 services:
+  # PostgreSQL 16 with pgvector extension
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: javainfohunter-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-javainfohunter}
+      POSTGRES_USER: ${DB_USERNAME:-admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-admin123}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - javainfohunter-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-admin} -d ${DB_NAME:-javainfohunter}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
   # RabbitMQ 3 with Management UI
   rabbitmq:
     image: rabbitmq:3-management
@@ -47,6 +69,8 @@ networks:
     name: javainfohunter-network
 
 volumes:
+  postgres_data:
+    name: javainfohunter-postgres-data
   rabbitmq_data:
     name: javainfohunter-rabbitmq-data
   redis_data:

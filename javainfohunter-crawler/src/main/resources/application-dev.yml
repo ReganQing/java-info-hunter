@@ -39,6 +39,7 @@ javainfohunter:
     scheduler:
       initial-delay: 5000  # 5 seconds for faster startup in dev
       fixed-rate: 300000   # 5 minutes for more frequent crawling in dev
+      max-concurrent-sources: ${CRAWLER_MAX_CONCURRENT_SOURCES:4}
 
     feed:
       connection-timeout: 15000  # 15 seconds

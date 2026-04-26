@@ -8,7 +8,6 @@ import com.ron.javainfohunter.dto.RawContentMessage;
 import com.ron.javainfohunter.processor.service.ContentRoutingService;
 import com.ron.javainfohunter.processor.service.ResultAggregator;
 import jakarta.annotation.PreDestroy;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -56,7 +55,6 @@ import java.util.concurrent.TimeoutException;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ContentRoutingServiceImpl implements ContentRoutingService {
 
     private final ProcessorProperties properties;
@@ -68,7 +66,7 @@ public class ContentRoutingServiceImpl implements ContentRoutingService {
      * Semaphore to limit concurrent DashScope API calls.
      * Prevents overwhelming the API when processing a burst of messages.
      */
-    private final Semaphore apiConcurrencyLimiter = new Semaphore(30);
+    private final Semaphore apiConcurrencyLimiter;
 
     /**
      * Store results for aggregation by content hash.
@@ -88,6 +86,17 @@ public class ContentRoutingServiceImpl implements ContentRoutingService {
      */
     private final Map<String, CompletableFuture<Void>> completionFutures =
             new ConcurrentHashMap<>();
+
+    public ContentRoutingServiceImpl(ProcessorProperties properties,
+                                     List<AgentProcessor> agentProcessors,
+                                     ResultAggregator resultAggregator) {
+        this.properties = properties;
+        this.agentProcessors = agentProcessors;
+        this.resultAggregator = resultAggregator;
+        this.apiConcurrencyLimiter = new Semaphore(
+                Math.max(1, properties.getProcessing().getApiConcurrencyLimit())
+        );
+    }
 
     @PreDestroy
     void shutdown() {
@@ -116,6 +125,10 @@ public class ContentRoutingServiceImpl implements ContentRoutingService {
         }
 
         log.debug("Routing content hash={} to agents", contentHash);
+
+        if (completionFutures.size() >= properties.getProcessing().getMaxQueueSize()) {
+            throw new IllegalStateException("Processor in-memory queue is full");
+        }
 
         // Check if processor module is enabled
         if (!properties.isEnabled()) {

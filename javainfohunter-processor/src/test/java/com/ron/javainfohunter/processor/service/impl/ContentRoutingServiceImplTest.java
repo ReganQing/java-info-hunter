@@ -3,6 +3,7 @@ package com.ron.javainfohunter.processor.service.impl;
 import com.ron.javainfohunter.processor.agent.AgentProcessor;
 import com.ron.javainfohunter.processor.config.ProcessorProperties;
 import com.ron.javainfohunter.processor.dto.AgentResult;
+import com.ron.javainfohunter.processor.dto.ProcessedContentMessage;
 import com.ron.javainfohunter.processor.service.ResultAggregator;
 import com.ron.javainfohunter.dto.RawContentMessage;
 import org.junit.jupiter.api.BeforeEach;
@@ -71,6 +72,8 @@ class ContentRoutingServiceImplTest {
 
         service = new ContentRoutingServiceImpl(properties, List.of(mockProcessor), resultAggregator);
         when(resultAggregator.aggregate(any(), any()))
+                .thenReturn(CompletableFuture.completedFuture(new ProcessedContentMessage()));
+        lenient().when(resultAggregator.store(any()))
                 .thenReturn(CompletableFuture.completedFuture(null));
 
         service.routeToAgents(contentMessage);

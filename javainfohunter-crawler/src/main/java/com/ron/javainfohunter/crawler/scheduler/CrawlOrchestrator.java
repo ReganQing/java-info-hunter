@@ -11,9 +11,12 @@ import com.ron.javainfohunter.crawler.publisher.ErrorPublisher;
 import com.ron.javainfohunter.crawler.dto.CrawlErrorMessage.ErrorType;
 import com.ron.javainfohunter.crawler.service.RssFeedCrawler;
 import com.ron.javainfohunter.crawler.service.RssSourceService;
+import com.ron.javainfohunter.entity.RawContent;
 import com.ron.javainfohunter.entity.RssSource;
+import com.ron.javainfohunter.repository.RawContentRepository;
 import com.ron.javainfohunter.repository.RssSourceRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -56,6 +59,7 @@ public class CrawlOrchestrator {
     private static final int MAX_CAUSE_DEPTH = 5;
 
     private final RssSourceRepository rssSourceRepository;
+    private final RawContentRepository rawContentRepository;
     private final RssSourceService rssSourceService;
     private final CrawlerProperties crawlerProperties;
     private final CrawlResultPublisher crawlResultPublisher;
@@ -67,6 +71,7 @@ public class CrawlOrchestrator {
     @Autowired
     public CrawlOrchestrator(
             RssSourceRepository rssSourceRepository,
+            RawContentRepository rawContentRepository,
             RssSourceService rssSourceService,
             CrawlerProperties crawlerProperties,
             CrawlResultPublisher crawlResultPublisher,
@@ -75,6 +80,7 @@ public class CrawlOrchestrator {
             ContentPublisher contentPublisher,
             @Qualifier("crawlExecutor") ExecutorService crawlExecutor) {
         this.rssSourceRepository = rssSourceRepository;
+        this.rawContentRepository = rawContentRepository;
         this.rssSourceService = rssSourceService;
         this.crawlerProperties = crawlerProperties;
         this.crawlResultPublisher = crawlResultPublisher;
@@ -200,10 +206,12 @@ public class CrawlOrchestrator {
                 if (messages != null && !messages.isEmpty()) {
                     for (RawContentMessage message : messages) {
                         try {
+                            persistRawContentForProcessing(source, message);
                             contentPublisher.publishRawContent(message);
                             newArticles++;
                         } catch (Exception e) {
                             log.warn("Failed to publish message: {}", message.getGuid(), e);
+                            markRawContentPublishFailed(message, e);
                             failedArticles++;
                             allPublishingSucceeded = false;
                         }
@@ -271,6 +279,77 @@ public class CrawlOrchestrator {
                 failedArticles,
                 sourceStartTime
         );
+    }
+
+    private void persistRawContentForProcessing(RssSource source, RawContentMessage message) {
+        if (message.getContentHash() == null || message.getContentHash().isBlank()) {
+            throw new IllegalArgumentException("Content hash cannot be blank");
+        }
+
+        if (rawContentRepository.findByContentHash(message.getContentHash()).isPresent()) {
+            log.debug("Raw content already exists for hash={}, skipping insert", message.getContentHash());
+            return;
+        }
+
+        RawContent rawContent = RawContent.builder()
+                .rssSource(source)
+                .guid(truncate(resolveGuid(message), 255))
+                .title(truncate(resolveTitle(message), 500))
+                .link(truncate(message.getLink(), 2048))
+                .rawContent(resolveRawContent(message))
+                .contentHash(message.getContentHash())
+                .author(truncate(message.getAuthor(), 255))
+                .publishDate(message.getPublishDate())
+                .crawlDate(message.getCrawlDate())
+                .processingStatus(RawContent.ProcessingStatus.PENDING)
+                .build();
+
+        try {
+            rawContentRepository.save(rawContent);
+        } catch (DataIntegrityViolationException e) {
+            log.debug("Raw content was inserted concurrently for hash={}", message.getContentHash());
+        }
+    }
+
+    private String resolveGuid(RawContentMessage message) {
+        if (message.getGuid() != null && !message.getGuid().isBlank()) {
+            return message.getGuid();
+        }
+        if (message.getLink() != null && !message.getLink().isBlank()) {
+            return message.getLink();
+        }
+        return message.getContentHash();
+    }
+
+    private String resolveTitle(RawContentMessage message) {
+        if (message.getTitle() != null && !message.getTitle().isBlank()) {
+            return message.getTitle();
+        }
+        return "Untitled " + message.getContentHash();
+    }
+
+    private String resolveRawContent(RawContentMessage message) {
+        if (message.getRawContent() != null && !message.getRawContent().isBlank()) {
+            return message.getRawContent();
+        }
+        return resolveTitle(message);
+    }
+
+    private String truncate(String value, int maxLength) {
+        if (value == null || value.length() <= maxLength) {
+            return value;
+        }
+        return value.substring(0, maxLength);
+    }
+
+    private void markRawContentPublishFailed(RawContentMessage message, Exception exception) {
+        if (message.getContentHash() == null || message.getContentHash().isBlank()) {
+            return;
+        }
+        rawContentRepository.findByContentHash(message.getContentHash()).ifPresent(rawContent -> {
+            rawContent.markAsFailed("RabbitMQ publish failed: " + exception.getMessage());
+            rawContentRepository.save(rawContent);
+        });
     }
 
     /**

@@ -81,7 +81,7 @@ public class RabbitMQConfig {
     public static final String CRAWL_ERROR_QUEUE = "crawler.crawl.error.queue";
 
     // Dead Letter Queue Names
-    public static final String RAW_CONTENT_DLQ = "crawler.raw.content.dlq";
+    public static final String RAW_CONTENT_DLQ = "processor.raw.content.dlq";
     public static final String CONTENT_ENCODED_DLQ = "crawler.content.encoded.dlq";
 
     // ========================================================================
@@ -94,7 +94,7 @@ public class RabbitMQConfig {
     public static final String CRAWL_ERROR_ROUTING_KEY = "crawl.error";
 
     // Dead Letter Routing Keys
-    public static final String RAW_CONTENT_DLQ_ROUTING_KEY = "raw.content.dlq";
+    public static final String RAW_CONTENT_DLQ_ROUTING_KEY = "processor.raw.content.dlq";
     public static final String CONTENT_ENCODED_DLQ_ROUTING_KEY = "content.encoded.dlq";
 
     // ========================================================================

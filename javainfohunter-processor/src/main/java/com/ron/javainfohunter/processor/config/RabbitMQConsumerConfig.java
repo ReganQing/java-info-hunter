@@ -1,5 +1,6 @@
 package com.ron.javainfohunter.processor.config;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -71,7 +72,10 @@ import org.springframework.context.annotation.Configuration;
  */
 @Slf4j
 @Configuration
+@RequiredArgsConstructor
 public class RabbitMQConsumerConfig {
+
+    private final ProcessorProperties processorProperties;
 
     static {
         log.info("=================================================");
@@ -628,11 +632,14 @@ public class RabbitMQConsumerConfig {
         factory.setConnectionFactory(connectionFactory);
         factory.setMessageConverter(jsonMessageConverter());
         factory.setAcknowledgeMode(AcknowledgeMode.MANUAL);
-        factory.setConcurrentConsumers(3);
-        factory.setMaxConcurrentConsumers(5);
-        factory.setPrefetchCount(5);
+        factory.setConcurrentConsumers(processorProperties.getQueue().getConcurrency());
+        factory.setMaxConcurrentConsumers(processorProperties.getQueue().getMaxConcurrency());
+        factory.setPrefetchCount(processorProperties.getQueue().getPrefetch());
 
-        log.info("rabbitListenerContainerFactory created successfully");
+        log.info("rabbitListenerContainerFactory created successfully: concurrency={}, maxConcurrency={}, prefetch={}",
+                processorProperties.getQueue().getConcurrency(),
+                processorProperties.getQueue().getMaxConcurrency(),
+                processorProperties.getQueue().getPrefetch());
 
         return factory;
     }

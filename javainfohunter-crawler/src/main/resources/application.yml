@@ -105,6 +105,7 @@ javainfohunter:
       enabled: ${CRAWLER_SCHEDULER_ENABLED:true}
       initial-delay: ${CRAWLER_INITIAL_DELAY:30000} # 30 seconds
       fixed-rate: ${CRAWLER_FIXED_RATE:3600000} # 1 hour
+      max-concurrent-sources: ${CRAWLER_MAX_CONCURRENT_SOURCES:8}
 
     # Feed Processing Configuration
     feed:

@@ -4,9 +4,11 @@ import com.ron.javainfohunter.entity.RawContent;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Collection;
@@ -213,6 +215,8 @@ public interface RawContentRepository extends JpaRepository<RawContent, Long> {
      * @param status New processing status
      */
     @Query("UPDATE RawContent rc SET rc.processingStatus = :status WHERE rc.id IN :ids")
+    @Modifying
+    @Transactional
     void bulkUpdateProcessingStatus(@Param("ids") List<Long> ids, @Param("status") RawContent.ProcessingStatus status);
 
     /**
@@ -265,6 +269,8 @@ public interface RawContentRepository extends JpaRepository<RawContent, Long> {
     @Query("DELETE FROM RawContent rc WHERE rc.crawlDate < :beforeDate " +
            "AND rc.processingStatus = 'COMPLETED' " +
            "AND NOT EXISTS (SELECT 1 FROM News n WHERE n.rawContent.id = rc.id)")
+    @Modifying
+    @Transactional
     int deleteOldProcessedContent(@Param("beforeDate") Instant beforeDate);
 
     /**
