@@ -74,6 +74,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @RequiredArgsConstructor
 public class RabbitMQConsumerConfig {
+    private static final int MAX_SAFE_CONSUMERS = 32;
+    private static final int MAX_SAFE_PREFETCH = 200;
 
     private final ProcessorProperties processorProperties;
 
@@ -632,14 +634,36 @@ public class RabbitMQConsumerConfig {
         factory.setConnectionFactory(connectionFactory);
         factory.setMessageConverter(jsonMessageConverter());
         factory.setAcknowledgeMode(AcknowledgeMode.MANUAL);
-        factory.setConcurrentConsumers(processorProperties.getQueue().getConcurrency());
-        factory.setMaxConcurrentConsumers(processorProperties.getQueue().getMaxConcurrency());
-        factory.setPrefetchCount(processorProperties.getQueue().getPrefetch());
+        int configuredConcurrency = processorProperties.getQueue().getConcurrency();
+        int configuredMaxConcurrency = processorProperties.getQueue().getMaxConcurrency();
+        int configuredPrefetch = processorProperties.getQueue().getPrefetch();
+
+        int concurrency = Math.min(MAX_SAFE_CONSUMERS, Math.max(1, configuredConcurrency));
+        int maxConcurrency = Math.min(MAX_SAFE_CONSUMERS, Math.max(concurrency, configuredMaxConcurrency));
+        int prefetch = Math.min(MAX_SAFE_PREFETCH, Math.max(1, configuredPrefetch));
+
+        if (configuredConcurrency != concurrency
+            || configuredMaxConcurrency != maxConcurrency
+            || configuredPrefetch != prefetch) {
+            log.warn(
+                "Adjusted RabbitMQ consumer settings for runtime safety: concurrency {}->{}, maxConcurrency {}->{}, prefetch {}->{}",
+                configuredConcurrency,
+                concurrency,
+                configuredMaxConcurrency,
+                maxConcurrency,
+                configuredPrefetch,
+                prefetch
+            );
+        }
+
+        factory.setConcurrentConsumers(concurrency);
+        factory.setMaxConcurrentConsumers(maxConcurrency);
+        factory.setPrefetchCount(prefetch);
 
         log.info("rabbitListenerContainerFactory created successfully: concurrency={}, maxConcurrency={}, prefetch={}",
-                processorProperties.getQueue().getConcurrency(),
-                processorProperties.getQueue().getMaxConcurrency(),
-                processorProperties.getQueue().getPrefetch());
+                concurrency,
+                maxConcurrency,
+                prefetch);
 
         return factory;
     }

@@ -1,8 +1,15 @@
 package com.ron.javainfohunter.crawler.config;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.annotation.Validated;
 
 /**
  * Configuration properties for the Crawler module.
@@ -40,6 +47,7 @@ import org.springframework.stereotype.Component;
  */
 @Data
 @Component
+@Validated
 @ConfigurationProperties(prefix = "javainfohunter.crawler")
 public class CrawlerProperties {
 
@@ -51,31 +59,37 @@ public class CrawlerProperties {
     /**
      * Scheduler configuration for periodic crawling.
      */
+    @Valid
     private Scheduler scheduler = new Scheduler();
 
     /**
      * Feed processing configuration.
      */
+    @Valid
     private Feed feed = new Feed();
 
     /**
      * Content processing configuration.
      */
+    @Valid
     private Processing processing = new Processing();
 
     /**
      * Retry configuration.
      */
+    @Valid
     private Retry retry = new Retry();
 
     /**
      * Deduplication configuration.
      */
+    @Valid
     private Deduplication deduplication = new Deduplication();
 
     /**
      * Publisher configuration for message publishing.
      */
+    @Valid
     private Publisher publisher = new Publisher();
 
     /**
@@ -92,18 +106,22 @@ public class CrawlerProperties {
          * Initial delay before first crawl (milliseconds).
          * Default: 30 seconds
          */
+        @Min(0)
         private long initialDelay = 30000;
 
         /**
          * Fixed rate between crawls (milliseconds).
          * Default: 1 hour
          */
+        @Min(1000)
         private long fixedRate = 3600000;
 
         /**
          * Maximum number of RSS sources crawled concurrently.
          * Keeps virtual-thread fan-out bounded on developer machines.
          */
+        @Min(1)
+        @Max(32)
         private int maxConcurrentSources = 8;
     }
 
@@ -116,24 +134,31 @@ public class CrawlerProperties {
          * Maximum number of articles to process per feed.
          * Prevents memory issues with large feeds.
          */
+        @Min(1)
+        @Max(500)
         private int maxArticlesPerFeed = 100;
 
         /**
          * Connection timeout for fetching RSS feeds (milliseconds).
          * Default: 30 seconds
          */
+        @Min(1000)
+        @Max(120000)
         private int connectionTimeout = 30000;
 
         /**
          * Read timeout for fetching RSS feeds (milliseconds).
          * Default: 60 seconds
          */
+        @Min(1000)
+        @Max(300000)
         private int readTimeout = 60000;
 
         /**
          * User-Agent header for HTTP requests.
          * Some feeds require specific user agents.
          */
+        @NotBlank
         private String userAgent = "JavaInfoHunter/1.0 (+https://github.com/yourusername/javainfohunter)";
     }
 
@@ -146,12 +171,16 @@ public class CrawlerProperties {
          * Batch size for processing articles.
          * Affects database batch insert performance.
          */
+        @Min(1)
+        @Max(500)
         private int batchSize = 50;
 
         /**
          * Maximum number of retry attempts for failed processing.
          * @deprecated Use {@link Retry#maxAttempts} instead
          */
+        @Min(0)
+        @Max(10)
         @Deprecated
         private int maxRetries = 3;
 
@@ -159,6 +188,8 @@ public class CrawlerProperties {
          * Backoff time between retries (milliseconds).
          * @deprecated Use {@link Retry#initialDelay} and {@link Retry#backoffMultiplier} instead
          */
+        @Min(100)
+        @Max(300000)
         @Deprecated
         private long retryBackoff = 60000;
     }
@@ -172,24 +203,32 @@ public class CrawlerProperties {
          * Maximum number of retry attempts.
          * Default: 3
          */
+        @Min(0)
+        @Max(10)
         private int maxAttempts = 3;
 
         /**
          * Initial backoff delay in milliseconds.
          * Default: 1000ms (1 second)
          */
+        @Min(100)
+        @Max(60000)
         private long initialDelay = 1000;
 
         /**
          * Exponential backoff multiplier.
          * Default: 2.0 (doubles delay each retry: 1s, 2s, 4s, ...)
          */
+        @DecimalMin("1.0")
+        @DecimalMax("10.0")
         private double backoffMultiplier = 2.0;
 
         /**
          * Maximum backoff delay in milliseconds.
          * Default: 60000ms (1 minute)
          */
+        @Min(1000)
+        @Max(300000)
         private long maxDelay = 60000;
     }
 
@@ -208,6 +247,7 @@ public class CrawlerProperties {
          * Hash algorithm for content deduplication.
          * Supported: SHA-256, SHA-512, MD5
          */
+        @NotBlank
         private String hashAlgorithm = "SHA-256";
     }
 
@@ -222,6 +262,8 @@ public class CrawlerProperties {
          * stale pending confirms that haven't received broker confirmation.</p>
          * <p>Default: 300000ms (5 minutes)</p>
          */
+        @Min(1000)
+        @Max(900000)
         private long cleanupIntervalMs = 300000;
 
         /**
@@ -229,6 +271,8 @@ public class CrawlerProperties {
          * <p>Stale confirms older than this duration are removed during cleanup.</p>
          * <p>Default: 120000ms (2 minutes)</p>
          */
+        @Min(1000)
+        @Max(600000)
         private long staleConfirmAgeMs = 120000;
     }
 

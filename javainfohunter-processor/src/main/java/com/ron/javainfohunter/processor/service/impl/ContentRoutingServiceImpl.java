@@ -56,6 +56,7 @@ import java.util.concurrent.TimeoutException;
 @Slf4j
 @Service
 public class ContentRoutingServiceImpl implements ContentRoutingService {
+    private static final int MAX_SAFE_API_CONCURRENCY = 32;
 
     private final ProcessorProperties properties;
     private final List<AgentProcessor> agentProcessors;
@@ -93,9 +94,16 @@ public class ContentRoutingServiceImpl implements ContentRoutingService {
         this.properties = properties;
         this.agentProcessors = agentProcessors;
         this.resultAggregator = resultAggregator;
-        this.apiConcurrencyLimiter = new Semaphore(
-                Math.max(1, properties.getProcessing().getApiConcurrencyLimit())
-        );
+        int configuredApiConcurrency = properties.getProcessing().getApiConcurrencyLimit();
+        int safeApiConcurrency = Math.min(MAX_SAFE_API_CONCURRENCY, Math.max(1, configuredApiConcurrency));
+        if (configuredApiConcurrency != safeApiConcurrency) {
+            log.warn(
+                "Adjusted processor apiConcurrencyLimit from {} to {} for runtime safety",
+                configuredApiConcurrency,
+                safeApiConcurrency
+            );
+        }
+        this.apiConcurrencyLimiter = new Semaphore(safeApiConcurrency);
     }
 
     @PreDestroy

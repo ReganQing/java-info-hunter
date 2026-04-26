@@ -29,6 +29,7 @@ import java.util.concurrent.Executors;
 @Configuration
 @EnableScheduling
 public class SchedulerConfiguration {
+    private static final int MAX_SAFE_CRAWL_WORKERS = 32;
 
     /**
      * Configure a TaskScheduler that uses virtual threads.
@@ -83,8 +84,15 @@ public class SchedulerConfiguration {
      */
     @Bean(name = "crawlExecutor")
     public java.util.concurrent.ExecutorService crawlExecutor(CrawlerProperties crawlerProperties) {
-        int maxConcurrentSources = Math.max(1,
-                crawlerProperties.getScheduler().getMaxConcurrentSources());
+        int configured = crawlerProperties.getScheduler().getMaxConcurrentSources();
+        int maxConcurrentSources = Math.min(MAX_SAFE_CRAWL_WORKERS, Math.max(1, configured));
+        if (configured != maxConcurrentSources) {
+            log.warn(
+                "Adjusted crawler maxConcurrentSources from {} to {} for runtime safety",
+                configured,
+                maxConcurrentSources
+            );
+        }
         log.info("Initializing crawl executor with maxConcurrentSources={}", maxConcurrentSources);
         return Executors.newFixedThreadPool(
                 maxConcurrentSources,
