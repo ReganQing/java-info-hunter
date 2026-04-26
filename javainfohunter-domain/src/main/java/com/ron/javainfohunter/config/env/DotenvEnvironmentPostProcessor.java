@@ -1,4 +1,4 @@
-package com.ron.javainfohunter.ai.config;
+package com.ron.javainfohunter.config.env;
 
 import io.github.cdimascio.dotenv.Dotenv;
 import io.github.cdimascio.dotenv.DotenvException;

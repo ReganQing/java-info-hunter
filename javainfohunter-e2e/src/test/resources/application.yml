@@ -49,6 +49,9 @@ spring:
 
 # Application configuration
 javainfohunter:
+  startup:
+    validation:
+      enabled: false
   ai:
     enabled: false
     agent:

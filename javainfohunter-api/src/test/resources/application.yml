@@ -1,6 +1,9 @@
 # Test configuration for javainfohunter-api
 
 javainfohunter:
+  startup:
+    validation:
+      enabled: false
   ai:
     # Disable AI features for integration tests (no API key required)
     enabled: false

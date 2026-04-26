@@ -23,11 +23,11 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 10
-      minimum-idle: 5
-      connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:10}
+      minimum-idle: ${DB_POOL_MIN_IDLE:3}
+      connection-timeout: ${DB_POOL_CONN_TIMEOUT_MS:30000}
+      idle-timeout: ${DB_POOL_IDLE_TIMEOUT_MS:600000}
+      max-lifetime: ${DB_POOL_MAX_LIFETIME_MS:1800000}
 
   # JPA Configuration
   jpa:
@@ -41,10 +41,11 @@ spring:
           batch_size: 50
         order_inserts: true
         order_updates: true
+    open-in-view: false
 
   # Flyway Configuration
   flyway:
-    enabled: true
+    enabled: ${PROCESSOR_FLYWAY_ENABLED:false}
     locations: classpath:db/migration
     baseline-on-migrate: true
     validate-on-migrate: true
@@ -152,6 +153,18 @@ javainfohunter:
       concurrency: ${PROCESSOR_RABBITMQ_CONCURRENCY:2}
       max-concurrency: ${PROCESSOR_RABBITMQ_MAX_CONCURRENCY:4}
       prefetch: ${PROCESSOR_RABBITMQ_PREFETCH:3}
+
+  startup:
+    validation:
+      enabled: ${STARTUP_VALIDATION_ENABLED:true}
+      required-properties:
+        - spring.datasource.username
+        - spring.datasource.password
+        - spring.rabbitmq.host
+        - spring.rabbitmq.port
+        - spring.rabbitmq.username
+        - spring.rabbitmq.password
+        - spring.ai.dashscope.api-key
 
 # Logging Configuration
 logging:

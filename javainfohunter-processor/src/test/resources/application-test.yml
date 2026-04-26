@@ -59,6 +59,9 @@ spring:
 
 # Processor Module Test Configuration
 javainfohunter:
+  startup:
+    validation:
+      enabled: false
   processor:
     # Enable processor in tests
     enabled: true
