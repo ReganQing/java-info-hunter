@@ -120,6 +120,8 @@ javainfohunter:
         - "spring.datasource.hikari.connection-timeout|1000|120000"
         - "spring.datasource.hikari.idle-timeout|10000|1800000"
         - "spring.datasource.hikari.max-lifetime|30000|7200000"
+      compare-rules:
+        - "spring.datasource.hikari.minimum-idle|<=|spring.datasource.hikari.maximum-pool-size"
 
   ai:
     enabled: false  # Disable AI features for API service (enable only when needed)

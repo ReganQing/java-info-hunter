@@ -143,6 +143,9 @@ javainfohunter:
         - "spring.rabbitmq.listener.simple.max-concurrency|1|32"
         - "spring.rabbitmq.listener.simple.prefetch|1|200"
         - "javainfohunter.crawler.scheduler.max-concurrent-sources|1|32"
+      compare-rules:
+        - "spring.datasource.hikari.minimum-idle|<=|spring.datasource.hikari.maximum-pool-size"
+        - "spring.rabbitmq.listener.simple.concurrency|<=|spring.rabbitmq.listener.simple.max-concurrency"
 
 # Logging Configuration
 logging:

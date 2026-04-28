@@ -73,6 +73,7 @@ public class StartupRequiredPropertiesValidator {
         }
 
         validateNumericRanges();
+        validateComparisonRules();
 
         log.info(
             "Startup required-property validation passed ({} properties)",
@@ -168,6 +169,107 @@ public class StartupRequiredPropertiesValidator {
             "Startup numeric-range validation passed ({} rules)",
             numericRanges.size()
         );
+    }
+
+    private void validateComparisonRules() {
+        String[] configuredRules = environment.getProperty(
+            "javainfohunter.startup.validation.compare-rules",
+            String[].class,
+            new String[0]
+        );
+        if (configuredRules.length == 0) {
+            String rawRules = environment.getProperty("javainfohunter.startup.validation.compare-rules");
+            if (StringUtils.hasText(rawRules)) {
+                configuredRules = Arrays.stream(rawRules.split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::hasText)
+                    .toArray(String[]::new);
+            }
+        }
+
+        List<String> compareRules = Arrays.asList(configuredRules);
+        if (compareRules.isEmpty()) {
+            return;
+        }
+
+        for (String ruleText : compareRules) {
+            if (!StringUtils.hasText(ruleText)) {
+                continue;
+            }
+
+            String[] parts = ruleText.split("\\|", -1);
+            if (parts.length != 3) {
+                throw new IllegalStateException(
+                    "Startup compare-rule format is invalid: " + ruleText
+                );
+            }
+
+            String leftKey = parts[0].trim();
+            String operator = parts[1].trim();
+            String rightKey = parts[2].trim();
+
+            if (!StringUtils.hasText(leftKey) || !StringUtils.hasText(rightKey)) {
+                throw new IllegalStateException(
+                    "Startup compare-rule has blank property key: " + ruleText
+                );
+            }
+
+            if (!"<=".equals(operator) && !">=".equals(operator)) {
+                throw new IllegalStateException(
+                    "Startup compare-rule has unsupported operator '" + operator + "': " + ruleText
+                );
+            }
+
+            Double leftValue = readNumericProperty(leftKey);
+            Double rightValue = readNumericProperty(rightKey);
+
+            if (leftValue == null || rightValue == null) {
+                continue;
+            }
+
+            boolean passed = "<=".equals(operator)
+                ? leftValue <= rightValue
+                : leftValue >= rightValue;
+
+            if (!passed) {
+                throw new IllegalStateException(
+                    "Startup compare-rule validation failed: property '"
+                        + leftKey
+                        + "' value "
+                        + leftValue
+                        + " must be "
+                        + operator
+                        + " property '"
+                        + rightKey
+                        + "' value "
+                        + rightValue
+                );
+            }
+        }
+
+        log.info(
+            "Startup compare-rule validation passed ({} rules)",
+            compareRules.size()
+        );
+    }
+
+    private Double readNumericProperty(String key) {
+        String value = environment.getProperty(key);
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+
+        try {
+            return Double.parseDouble(value.trim());
+        } catch (NumberFormatException exception) {
+            throw new IllegalStateException(
+                "Startup compare-rule validation failed: property '"
+                    + key
+                    + "' value '"
+                    + value
+                    + "' is not numeric"
+            );
+        }
     }
 
     private Double parseBound(String rawBound, String key, String boundName) {
