@@ -2,6 +2,8 @@ param(
     [string]$Module = "javainfohunter-processor",
     [string]$TestPattern = "ContentRoutingServiceImplTest",
     [switch]$DisableAlsoMake,
+    [switch]$SkipPreflight,
+    [switch]$AllowPlaceholderSecrets,
     [int]$CpuThresholdPercent = 85,
     [int]$MemoryThresholdPercent = 85,
     [int]$SampleIntervalSeconds = 3,
@@ -10,6 +12,32 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+
+if (-not $SkipPreflight) {
+    $preflightScript = Join-Path $PSScriptRoot "validate-runtime-config.ps1"
+    if (-not (Test-Path $preflightScript)) {
+        throw "[safe-smoke] preflight script not found: $preflightScript"
+    }
+
+    $envFile = ".env"
+    $allowPlaceholdersFromExample = $false
+    if (-not (Test-Path $envFile)) {
+        $envFile = ".env.example"
+        $allowPlaceholdersFromExample = $true
+    }
+
+    Write-Host "[safe-smoke] Running preflight config check with $envFile ..."
+    if ($AllowPlaceholderSecrets -or $allowPlaceholdersFromExample -or $envFile -eq ".env.example") {
+        & $preflightScript -EnvFile $envFile -AllowPlaceholderSecrets
+    }
+    else {
+        & $preflightScript -EnvFile $envFile
+    }
+
+    if (-not $?) {
+        throw "[safe-smoke] preflight config check failed."
+    }
+}
 
 Write-Host "[safe-smoke] Applying conservative runtime limits..."
 $env:PROCESSOR_RABBITMQ_CONCURRENCY = "1"
