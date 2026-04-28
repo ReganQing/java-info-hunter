@@ -281,6 +281,12 @@ Examples:
 - `spring.rabbitmq.listener.simple.concurrency <= spring.rabbitmq.listener.simple.max-concurrency`
 - `javainfohunter.processor.queue.concurrency <= javainfohunter.processor.queue.max-concurrency`
 
+Preflight check before starting services:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/validate-runtime-config.ps1 -EnvFile .env
+```
+
 ---
 
 ## Development

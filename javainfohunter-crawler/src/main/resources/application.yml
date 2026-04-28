@@ -62,9 +62,9 @@ spring:
     listener:
       simple:
         acknowledge-mode: manual
-        prefetch: 10
-        concurrency: 3
-        max-concurrency: 10
+        prefetch: ${CRAWLER_RABBITMQ_PREFETCH:10}
+        concurrency: ${CRAWLER_RABBITMQ_CONCURRENCY:3}
+        max-concurrency: ${CRAWLER_RABBITMQ_MAX_CONCURRENCY:10}
     connection-timeout: 15000
     cache:
       channel:
