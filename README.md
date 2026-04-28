@@ -268,6 +268,19 @@ spring:
 | `application-staging.yml` | Staging environment |
 | `application-prod.yml` | Production settings |
 
+### Startup Guardrails (A2)
+
+The system now validates critical runtime configuration at startup and fails fast on invalid values:
+
+- Numeric ranges via `javainfohunter.startup.validation.numeric-ranges`
+- Cross-field invariants via `javainfohunter.startup.validation.compare-rules`
+
+Examples:
+
+- `spring.datasource.hikari.minimum-idle <= spring.datasource.hikari.maximum-pool-size`
+- `spring.rabbitmq.listener.simple.concurrency <= spring.rabbitmq.listener.simple.max-concurrency`
+- `javainfohunter.processor.queue.concurrency <= javainfohunter.processor.queue.max-concurrency`
+
 ---
 
 ## Development
