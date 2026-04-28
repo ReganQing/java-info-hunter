@@ -1,6 +1,7 @@
 param(
     [string]$EnvFile = ".env",
-    [switch]$AllowPlaceholderSecrets
+    [switch]$AllowPlaceholderSecrets,
+    [string]$ReportFile = ""
 )
 
 Set-StrictMode -Version Latest
@@ -138,5 +139,15 @@ Assert-NumericRange -Values $values -Key "PROCESSING_API_CONCURRENCY_LIMIT" -Min
 Assert-Compare -Values $values -LeftKey "DB_POOL_MIN_IDLE" -Operator "<=" -RightKey "DB_POOL_MAX_SIZE"
 Assert-Compare -Values $values -LeftKey "CRAWLER_RABBITMQ_CONCURRENCY" -Operator "<=" -RightKey "CRAWLER_RABBITMQ_MAX_CONCURRENCY"
 Assert-Compare -Values $values -LeftKey "PROCESSOR_RABBITMQ_CONCURRENCY" -Operator "<=" -RightKey "PROCESSOR_RABBITMQ_MAX_CONCURRENCY"
+
+if ($ReportFile -ne "") {
+    $report = @(
+        "status=passed",
+        ("checked_at=" + (Get-Date).ToString("s")),
+        ("env_file=" + $EnvFile),
+        ("allow_placeholder_secrets=" + $AllowPlaceholderSecrets.IsPresent)
+    )
+    Set-Content -Path $ReportFile -Value $report -Encoding ascii
+}
 
 Write-Host "[config-check] Runtime configuration passed."

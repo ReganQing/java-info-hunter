@@ -1,12 +1,34 @@
 @echo off
 setlocal
 
-echo [stop-all] Stopping JavaInfoHunter module processes...
+set "SCRIPT_DIR=%~dp0"
+
+echo [stop-all] Stopping JavaInfoHunter services by PID files...
 powershell -ExecutionPolicy Bypass -Command ^
-  "$patterns = @('spring-boot:run -pl javainfohunter-api','spring-boot:run -pl javainfohunter-crawler','spring-boot:run -pl javainfohunter-processor');" ^
-  "$targets = Get-CimInstance Win32_Process | Where-Object { $cmd = $_.CommandLine; $cmd -and ($patterns | Where-Object { $cmd -like ('*' + $_ + '*') }).Count -gt 0 };" ^
-  "if (-not $targets) { Write-Host '[stop-all] No matching processes found.'; exit 0 };" ^
-  "$targets | ForEach-Object { Write-Host ('[stop-all] Stopping PID ' + $_.ProcessId); Stop-Process -Id $_.ProcessId -Force };" ^
-  "Write-Host '[stop-all] All matching processes stopped.'"
+  "$ErrorActionPreference = 'Stop';" ^
+  "$scriptDir = '%SCRIPT_DIR%';" ^
+  "$services = @(" ^
+  "  @{ Name = 'api'; Pattern = 'javainfohunter-api' }," ^
+  "  @{ Name = 'crawler'; Pattern = 'javainfohunter-crawler' }," ^
+  "  @{ Name = 'processor'; Pattern = 'javainfohunter-processor' }" ^
+  ");" ^
+  "foreach ($svc in $services) {" ^
+  "  $pidFile = Join-Path $scriptDir ($svc.Name + '.pid');" ^
+  "  if (-not (Test-Path $pidFile)) { Write-Host ('[stop-all] ' + $svc.Name + ' pid file not found.'); continue };" ^
+  "  $pidText = (Get-Content $pidFile -ErrorAction SilentlyContinue | Select-Object -First 1).Trim();" ^
+  "  if (-not $pidText) { Remove-Item $pidFile -ErrorAction SilentlyContinue; continue };" ^
+  "  $targetPid = [int]$pidText;" ^
+  "  $proc = Get-CimInstance Win32_Process -Filter ('ProcessId=' + $targetPid) -ErrorAction SilentlyContinue;" ^
+  "  if (-not $proc) { Remove-Item $pidFile -ErrorAction SilentlyContinue; Write-Host ('[stop-all] ' + $svc.Name + ' pid not running: ' + $targetPid); continue };" ^
+  "  $cmd = $proc.CommandLine;" ^
+  "  if (-not $cmd -or $cmd -notlike ('*' + $svc.Pattern + '*')) { Write-Warning ('[stop-all] PID ' + $targetPid + ' does not match ' + $svc.Name + ', skipping.'); continue };" ^
+  "  Stop-Process -Id $targetPid -Force;" ^
+  "  Remove-Item $pidFile -ErrorAction SilentlyContinue;" ^
+  "  Write-Host ('[stop-all] Stopped ' + $svc.Name + ' PID=' + $targetPid);" ^
+  "}"
+if errorlevel 1 (
+    echo [stop-all] Stop operation failed.
+    exit /b 1
+)
 
 exit /b 0

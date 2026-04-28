@@ -287,6 +287,12 @@ Preflight check before starting services:
 powershell -ExecutionPolicy Bypass -File scripts/validate-runtime-config.ps1 -EnvFile .env
 ```
 
+Lifecycle check (preflight -> start -> health -> stop):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run-lifecycle-check.ps1
+```
+
 ---
 
 ## Development
