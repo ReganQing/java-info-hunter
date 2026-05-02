@@ -115,6 +115,10 @@ $required = @(
 
 foreach ($key in $required) {
     $v = Get-Value -Values $values -Key $key
+    if ($key -eq "JWT_SECRET" -and $AllowPlaceholderSecrets -and $v -eq "") {
+        Write-Host "[config-check] JWT_SECRET is missing in .env; allowed because -AllowPlaceholderSecrets is set."
+        continue
+    }
     if ($v -eq "") {
         throw "[config-check] missing required key: $key"
     }

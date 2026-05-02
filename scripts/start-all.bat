@@ -28,9 +28,9 @@ powershell -ExecutionPolicy Bypass -Command ^
   "$scriptDir = '%SCRIPT_DIR%';" ^
   "$rootDir = '%ROOT_DIR%';" ^
   "$services = @(" ^
-  "  @{ Name = 'api'; Cmd = 'mvnw.cmd -f javainfohunter-api/pom.xml spring-boot:run -Dspring-boot.run.profiles=develop -Dmaven.test.skip=true' }," ^
-  "  @{ Name = 'crawler'; Cmd = 'mvnw.cmd -f javainfohunter-crawler/pom.xml spring-boot:run -Dspring-boot.run.profiles=develop -Dmaven.test.skip=true' }," ^
-  "  @{ Name = 'processor'; Cmd = 'mvnw.cmd -f javainfohunter-processor/pom.xml spring-boot:run -Dspring-boot.run.profiles=develop -Dmaven.test.skip=true' }" ^
+  "  @{ Name = 'api'; Cmd = 'mvnw.cmd -f javainfohunter-api/pom.xml spring-boot:run -Dspring-boot.run.profiles=dev -Dmaven.test.skip=true' }," ^
+  "  @{ Name = 'crawler'; Cmd = 'mvnw.cmd -f javainfohunter-crawler/pom.xml spring-boot:run -Dspring-boot.run.profiles=dev -Dmaven.test.skip=true' }," ^
+  "  @{ Name = 'processor'; Cmd = 'mvnw.cmd -f javainfohunter-processor/pom.xml spring-boot:run -Dspring-boot.run.profiles=dev -Dmaven.test.skip=true' }" ^
   ");" ^
   "foreach ($svc in $services) {" ^
   "  $logFile = Join-Path $scriptDir ('logs\\' + $svc.Name + '.log');" ^

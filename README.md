@@ -287,10 +287,22 @@ Preflight check before starting services:
 powershell -ExecutionPolicy Bypass -File scripts/validate-runtime-config.ps1 -EnvFile .env
 ```
 
+For local lifecycle smoke runs only, placeholder JWT secret can be explicitly enabled:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/validate-runtime-config.ps1 -EnvFile .env -AllowPlaceholderSecrets
+```
+
 Lifecycle check (preflight -> start -> health -> stop):
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/run-lifecycle-check.ps1
+```
+
+To allow placeholder/missing `JWT_SECRET` during lifecycle checks, use:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run-lifecycle-check.ps1 -AllowPlaceholderSecrets
 ```
 
 ---

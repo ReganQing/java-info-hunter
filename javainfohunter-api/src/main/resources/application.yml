@@ -127,7 +127,8 @@ javainfohunter:
     enabled: false  # Disable AI features for API service (enable only when needed)
   security:
     jwt:
-      secret: ${JWT_SECRET}
+      secret: ${JWT_SECRET:jih_dev_placeholder_jwt_secret_min_32_chars_only_for_explicit_lifecycle_toggle}
+      allow-placeholder-secret: ${JIH_ALLOW_PLACEHOLDER_SECRETS:false}
       access-token-expiry: ${JWT_ACCESS_EXPIRY:900000}   # 15 minutes
       refresh-token-expiry: ${JWT_REFRESH_EXPIRY:604800000} # 7 days
     initial-admin:
