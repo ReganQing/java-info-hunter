@@ -12,6 +12,27 @@ $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $rootDir = Split-Path -Parent $scriptDir
 $reportFile = Join-Path $scriptDir "preflight-report.txt"
 
+function Show-ServiceLogTail {
+    param(
+        [string]$ServiceName,
+        [int]$TailLines = 80
+    )
+    $logFile = Join-Path $scriptDir ("logs\" + $ServiceName + ".log")
+    $errFile = Join-Path $scriptDir ("logs\" + $ServiceName + ".err.log")
+
+    if (Test-Path $logFile) {
+        Write-Host ("[lifecycle] ---- {0}.log (tail {1}) ----" -f $ServiceName, $TailLines)
+        Get-Content -Path $logFile -Tail $TailLines | ForEach-Object { Write-Host $_ }
+    } else {
+        Write-Host ("[lifecycle] log file not found: {0}" -f $logFile)
+    }
+
+    if (Test-Path $errFile) {
+        Write-Host ("[lifecycle] ---- {0}.err.log (tail {1}) ----" -f $ServiceName, $TailLines)
+        Get-Content -Path $errFile -Tail $TailLines | ForEach-Object { Write-Host $_ }
+    }
+}
+
 Write-Host "[lifecycle] Preflight config check..."
 if ($AllowPlaceholderSecrets) {
     & powershell -ExecutionPolicy Bypass -File (Join-Path $scriptDir "validate-runtime-config.ps1") -EnvFile (Join-Path $rootDir ".env") -AllowPlaceholderSecrets -ReportFile $reportFile
@@ -109,6 +130,9 @@ try {
         $failed = @($unhealthy.GetEnumerator() | Where-Object { $_.Value } | ForEach-Object { $_.Key })
         if ($failed.Count -gt 0) {
             $failedText = ($failed -join ", ")
+            foreach ($svcName in $failed) {
+                Show-ServiceLogTail -ServiceName $svcName -TailLines 120
+            }
             throw "[lifecycle] Strict health check failed for services: $failedText"
         }
 
