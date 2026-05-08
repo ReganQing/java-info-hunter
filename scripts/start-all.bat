@@ -15,11 +15,15 @@ if errorlevel 1 (
     exit /b 1
 )
 
-echo [start-all] Installing required module dependencies...
-call mvnw.cmd -Dmaven.test.skip=true install -pl javainfohunter-api,javainfohunter-crawler,javainfohunter-processor -am
-if errorlevel 1 (
-    echo [start-all] Dependency install failed.
-    exit /b 1
+if /i "%JIH_SKIP_DEP_INSTALL%"=="1" (
+    echo [start-all] Skipping dependency install because JIH_SKIP_DEP_INSTALL=1
+) else (
+    echo [start-all] Installing required module dependencies...
+    call mvnw.cmd -Dmaven.test.skip=true install -pl javainfohunter-api,javainfohunter-crawler,javainfohunter-processor -am
+    if errorlevel 1 (
+        echo [start-all] Dependency install failed.
+        exit /b 1
+    )
 )
 
 echo [start-all] Starting services with PID files...

@@ -1,6 +1,8 @@
 param(
     [int]$StartupTimeoutSeconds = 120,
-    [switch]$AllowPlaceholderSecrets
+    [switch]$AllowPlaceholderSecrets,
+    [switch]$SkipDependencyInstall,
+    [switch]$RequireHealthUp
 )
 
 Set-StrictMode -Version Latest
@@ -23,45 +25,110 @@ try {
     if ($AllowPlaceholderSecrets) {
         $env:JIH_ALLOW_PLACEHOLDER_SECRETS = "1"
     }
+    if ($SkipDependencyInstall) {
+        $env:JIH_SKIP_DEP_INSTALL = "1"
+    }
 
-    & cmd /c (Join-Path $scriptDir "start-all.bat")
+    & (Join-Path $scriptDir "start-all.bat")
     if ($LASTEXITCODE -ne 0) {
         throw "[lifecycle] start-all failed."
     }
     $started = $true
 
-    $healthUrl = "http://localhost:8080/actuator/health"
+    $services = @(
+        @{ Name = "api"; Port = 8080; Url = "http://localhost:8080/actuator/health" },
+        @{ Name = "crawler"; Port = 8081; Url = "http://localhost:8081/actuator/health" },
+        @{ Name = "processor"; Port = 8082; Url = "http://localhost:8082/actuator/health" }
+    )
     $deadline = (Get-Date).AddSeconds($StartupTimeoutSeconds)
-    $healthy = $false
+    $notListening = @{}
+    foreach ($svc in $services) {
+        $notListening[$svc.Name] = $true
+    }
 
+    # Phase 1: wait ports to listen (startup success baseline)
     while ((Get-Date) -lt $deadline) {
-        try {
-            $resp = Invoke-RestMethod -Uri $healthUrl -Method Get -TimeoutSec 5
-            if ($resp.status -eq "UP") {
-                $healthy = $true
-                break
+        foreach ($svc in $services) {
+            if (-not $notListening[$svc.Name]) {
+                continue
             }
-        } catch {
-            Start-Sleep -Seconds 2
-            continue
+            try {
+                $conn = Get-NetTCPConnection -LocalPort $svc.Port -State Listen -ErrorAction SilentlyContinue
+                if ($conn) {
+                    $notListening[$svc.Name] = $false
+                }
+            } catch {
+                continue
+            }
+        }
+        $remaining = @($notListening.GetEnumerator() | Where-Object { $_.Value } | ForEach-Object { $_.Key })
+        if ($remaining.Count -eq 0) {
+            break
         }
         Start-Sleep -Seconds 2
     }
 
-    if (-not $healthy) {
-        throw "[lifecycle] Health check failed: $healthUrl"
+    $startupFailed = @($notListening.GetEnumerator() | Where-Object { $_.Value } | ForEach-Object { $_.Key })
+    if ($startupFailed.Count -gt 0) {
+        $failedText = ($startupFailed -join ", ")
+        throw "[lifecycle] Startup check failed (port not listening): $failedText"
     }
 
-    Write-Host "[lifecycle] Health check passed: $healthUrl"
+    foreach ($svc in $services) {
+        Write-Host ("[lifecycle] Startup check passed: {0} (port {1})" -f $svc.Name, $svc.Port)
+    }
+
+    # Phase 2: optional strict health==UP
+    if ($RequireHealthUp) {
+        $unhealthy = @{}
+        foreach ($svc in $services) {
+            $unhealthy[$svc.Name] = $true
+        }
+
+        while ((Get-Date) -lt $deadline) {
+            foreach ($svc in $services) {
+                if (-not $unhealthy[$svc.Name]) {
+                    continue
+                }
+                try {
+                    $resp = Invoke-RestMethod -Uri $svc.Url -Method Get -TimeoutSec 5
+                    if ($resp.status -eq "UP") {
+                        $unhealthy[$svc.Name] = $false
+                    }
+                } catch {
+                    continue
+                }
+            }
+            $remaining = @($unhealthy.GetEnumerator() | Where-Object { $_.Value } | ForEach-Object { $_.Key })
+            if ($remaining.Count -eq 0) {
+                break
+            }
+            Start-Sleep -Seconds 2
+        }
+
+        $failed = @($unhealthy.GetEnumerator() | Where-Object { $_.Value } | ForEach-Object { $_.Key })
+        if ($failed.Count -gt 0) {
+            $failedText = ($failed -join ", ")
+            throw "[lifecycle] Strict health check failed for services: $failedText"
+        }
+
+        foreach ($svc in $services) {
+            Write-Host ("[lifecycle] Health check passed: {0} ({1})" -f $svc.Name, $svc.Url)
+        }
+    }
+
     Write-Host "[lifecycle] Completed successfully."
 }
 finally {
     if ($started) {
         Write-Host "[lifecycle] Stopping all services..."
-        & cmd /c (Join-Path $scriptDir "stop-all.bat")
+        & (Join-Path $scriptDir "stop-all.bat")
     }
 
     if (Test-Path Env:\JIH_ALLOW_PLACEHOLDER_SECRETS) {
         Remove-Item Env:\JIH_ALLOW_PLACEHOLDER_SECRETS -ErrorAction SilentlyContinue
+    }
+    if (Test-Path Env:\JIH_SKIP_DEP_INSTALL) {
+        Remove-Item Env:\JIH_SKIP_DEP_INSTALL -ErrorAction SilentlyContinue
     }
 }

@@ -305,6 +305,18 @@ To allow placeholder/missing `JWT_SECRET` during lifecycle checks, use:
 powershell -ExecutionPolicy Bypass -File scripts/run-lifecycle-check.ps1 -AllowPlaceholderSecrets
 ```
 
+To skip dependency pre-install (faster repeat checks on unchanged dependencies), use:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run-lifecycle-check.ps1 -SkipDependencyInstall
+```
+
+To require all service actuator health statuses to be `UP` (strict mode), use:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run-lifecycle-check.ps1 -RequireHealthUp
+```
+
 ---
 
 ## Development
