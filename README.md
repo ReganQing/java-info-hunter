@@ -323,6 +323,24 @@ If RabbitMQ still contains stale development queues from an older topology, rese
 powershell -ExecutionPolicy Bypass -File scripts/run-lifecycle-check.ps1 -ResetRabbitTopology -RequireHealthUp
 ```
 
+Low-concurrency smoke baseline (single-threaded Maven, bounded heap, host CPU/memory sampling):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/safe-concurrency-smoke.ps1 `
+  -Module javainfohunter-crawler `
+  -TestPattern CrawlerHealthIndicatorTest `
+  -DisableAlsoMake `
+  -AllowPlaceholderSecrets
+```
+
+Recommended local safety baseline:
+
+- Keep Maven at `-T 1`
+- Keep Maven heap at `1024 MB`
+- Stop when host CPU is `>= 75%` for 3 consecutive samples
+- Stop when host committed memory is `>= 80%` for 3 consecutive samples
+- Review `scripts/safe-smoke-report.txt` after each run for peak values and sample history
+
 ---
 
 ## Development
