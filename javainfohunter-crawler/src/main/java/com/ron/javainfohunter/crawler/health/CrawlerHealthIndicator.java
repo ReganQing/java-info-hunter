@@ -106,7 +106,7 @@ public class CrawlerHealthIndicator implements HealthIndicator {
             String dbStatus = checkDatabase();
             details.put("database", dbStatus);
 
-            boolean dbUp = "UP".equals(dbStatus);
+            boolean dbUp = isUpStatus(dbStatus);
             if (!dbUp) {
                 builder.down().withDetail("database", dbStatus);
             }
@@ -115,7 +115,7 @@ public class CrawlerHealthIndicator implements HealthIndicator {
             String rabbitmqStatus = checkRabbitMQ();
             details.put("rabbitmq", rabbitmqStatus);
 
-            boolean rabbitmqUp = "UP".equals(rabbitmqStatus);
+            boolean rabbitmqUp = isUpStatus(rabbitmqStatus);
             if (!rabbitmqUp) {
                 builder.down().withDetail("rabbitmq", rabbitmqStatus);
             }
@@ -220,6 +220,10 @@ public class CrawlerHealthIndicator implements HealthIndicator {
             log.error("RabbitMQ health check failed: {}", e.getMessage());
             return "DOWN (" + e.getMessage() + ")";
         }
+    }
+
+    private boolean isUpStatus(String status) {
+        return status != null && status.startsWith("UP");
     }
 
     /**

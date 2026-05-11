@@ -317,6 +317,12 @@ To require all service actuator health statuses to be `UP` (strict mode), use:
 powershell -ExecutionPolicy Bypass -File scripts/run-lifecycle-check.ps1 -RequireHealthUp
 ```
 
+If RabbitMQ still contains stale development queues from an older topology, reset the dev topology before the lifecycle check:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run-lifecycle-check.ps1 -ResetRabbitTopology -RequireHealthUp
+```
+
 ---
 
 ## Development

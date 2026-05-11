@@ -23,11 +23,11 @@ public class RabbitMQInit {
 
             // Declare queues
             String[] queues = {
-                "crawler.raw.content.queue",
+                "processor.raw.content.queue",
                 "crawler.content.encoded.queue",
                 "crawler.crawl.result.queue",
                 "crawler.crawl.error.queue",
-                "crawler.raw.content.dlq",
+                "processor.raw.content.dlq",
                 "crawler.content.encoded.dlq"
             };
 
@@ -37,11 +37,11 @@ public class RabbitMQInit {
             }
 
             // Declare bindings
-            channel.queueBind("crawler.raw.content.queue", "crawler.direct", "raw.content");
+            channel.queueBind("processor.raw.content.queue", "crawler.direct", "raw.content");
             channel.queueBind("crawler.content.encoded.queue", "crawler.direct", "content.encoded");
             channel.queueBind("crawler.crawl.result.queue", "crawler.direct", "crawl.result");
             channel.queueBind("crawler.crawl.error.queue", "crawler.direct", "crawl.error");
-            channel.queueBind("crawler.raw.content.dlq", "dead.letter.direct", "raw.content.dlq");
+            channel.queueBind("processor.raw.content.dlq", "dead.letter.direct", "processor.raw.content.dlq");
             channel.queueBind("crawler.content.encoded.dlq", "dead.letter.direct", "content.encoded.dlq");
 
             System.out.println("All bindings created");

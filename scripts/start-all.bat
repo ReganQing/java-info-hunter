@@ -31,18 +31,21 @@ powershell -ExecutionPolicy Bypass -Command ^
   "$ErrorActionPreference = 'Stop';" ^
   "$scriptDir = '%SCRIPT_DIR%';" ^
   "$rootDir = '%ROOT_DIR%';" ^
+  "$javaCmd = 'java';" ^
   "$services = @(" ^
-  "  @{ Name = 'api'; Cmd = 'mvnw.cmd -f javainfohunter-api/pom.xml spring-boot:run -Dspring-boot.run.profiles=dev -Dmaven.test.skip=true' }," ^
-  "  @{ Name = 'crawler'; Cmd = 'mvnw.cmd -f javainfohunter-crawler/pom.xml spring-boot:run -Dspring-boot.run.profiles=dev -Dmaven.test.skip=true' }," ^
-  "  @{ Name = 'processor'; Cmd = 'mvnw.cmd -f javainfohunter-processor/pom.xml spring-boot:run -Dspring-boot.run.profiles=dev -Dmaven.test.skip=true' }" ^
+  "  @{ Name = 'api'; Jar = 'javainfohunter-api\target\javainfohunter-api-0.0.1-SNAPSHOT.jar'; Args = @('--spring.profiles.active=dev') }," ^
+  "  @{ Name = 'crawler'; Jar = 'javainfohunter-crawler\target\javainfohunter-crawler-0.0.1-SNAPSHOT.jar'; Args = @('--spring.profiles.active=dev') }," ^
+  "  @{ Name = 'processor'; Jar = 'javainfohunter-processor\target\javainfohunter-processor-0.0.1-SNAPSHOT.jar'; Args = @('--spring.profiles.active=dev') }" ^
   ");" ^
   "foreach ($svc in $services) {" ^
+  "  $jarPath = Join-Path $rootDir $svc.Jar;" ^
+  "  if (-not (Test-Path $jarPath)) { throw ('[start-all] jar not found for ' + $svc.Name + ': ' + $jarPath) };" ^
   "  $logFile = Join-Path $scriptDir ('logs\\' + $svc.Name + '.log');" ^
-  "  $cmd = 'cd /d \"' + $rootDir + '\" && ' + $svc.Cmd + ' > \"' + $logFile + '\" 2>&1';" ^
-  "  $proc = Start-Process -FilePath 'cmd.exe' -ArgumentList '/d','/c',$cmd -PassThru -WindowStyle Hidden;" ^
+  "  $errFile = Join-Path $scriptDir ('logs\\' + $svc.Name + '.err.log');" ^
+  "  $proc = Start-Process -FilePath $javaCmd -ArgumentList (@('-jar', $jarPath) + $svc.Args) -WorkingDirectory $rootDir -PassThru -WindowStyle Hidden -RedirectStandardOutput $logFile -RedirectStandardError $errFile;" ^
   "  $pidFile = Join-Path $scriptDir ($svc.Name + '.pid');" ^
   "  Set-Content -Path $pidFile -Value $proc.Id -Encoding ascii;" ^
-  "  Write-Host ('[start-all] ' + $svc.Name + ' PID=' + $proc.Id);" ^
+  "  Write-Host ('[start-all] ' + $svc.Name + ' PID=' + $proc.Id + ' JAR=' + $jarPath);" ^
   "}"
 if errorlevel 1 (
     echo [start-all] Service start failed.

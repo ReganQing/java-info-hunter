@@ -3,16 +3,53 @@ $ErrorActionPreference = "Stop"
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $services = @(
-    @{ Name = "api"; Pattern = "ApiApplication" },
-    @{ Name = "crawler"; Pattern = "CrawlerApplication" },
-    @{ Name = "processor"; Pattern = "ProcessorApplication" }
+    @{
+        Name = "api"
+        MatchTokens = @(
+            "javainfohunter-api-0.0.1-SNAPSHOT.jar",
+            "ApiApplication"
+        )
+    },
+    @{
+        Name = "crawler"
+        MatchTokens = @(
+            "javainfohunter-crawler-0.0.1-SNAPSHOT.jar",
+            "CrawlerApplication"
+        )
+    },
+    @{
+        Name = "processor"
+        MatchTokens = @(
+            "javainfohunter-processor-0.0.1-SNAPSHOT.jar",
+            "ProcessorApplication"
+        )
+    }
 )
+
+function Test-ProcessMatchesService {
+    param(
+        $ProcessInfo,
+        [string[]]$MatchTokens
+    )
+
+    if (-not $ProcessInfo -or -not $ProcessInfo.CommandLine) {
+        return $false
+    }
+
+    foreach ($token in $MatchTokens) {
+        if ($ProcessInfo.CommandLine -like ("*" + $token + "*")) {
+            return $true
+        }
+    }
+
+    return $false
+}
 
 foreach ($svc in $services) {
     $pidFile = Join-Path $scriptDir ($svc.Name + ".pid")
     if (-not (Test-Path $pidFile)) {
         $fallbackNoPid = Get-CimInstance Win32_Process | Where-Object {
-            $_.CommandLine -and $_.CommandLine -like ("*" + $svc.Pattern + "*")
+            Test-ProcessMatchesService -ProcessInfo $_ -MatchTokens $svc.MatchTokens
         }
         if ($fallbackNoPid) {
             foreach ($fp in $fallbackNoPid) {
@@ -34,7 +71,7 @@ foreach ($svc in $services) {
     $targetPid = [int]$pidText
     $proc = Get-CimInstance Win32_Process -Filter ("ProcessId=" + $targetPid) -ErrorAction SilentlyContinue
 
-    if ($proc -and $proc.CommandLine -and $proc.CommandLine -like ("*" + $svc.Pattern + "*")) {
+    if (Test-ProcessMatchesService -ProcessInfo $proc -MatchTokens $svc.MatchTokens) {
         Stop-Process -Id $targetPid -Force -ErrorAction SilentlyContinue
         Remove-Item $pidFile -ErrorAction SilentlyContinue
         Write-Host ("[stop-all] Stopped {0} PID={1}" -f $svc.Name, $targetPid)
@@ -42,7 +79,7 @@ foreach ($svc in $services) {
     }
 
     $fallback = Get-CimInstance Win32_Process | Where-Object {
-        $_.CommandLine -and $_.CommandLine -like ("*" + $svc.Pattern + "*")
+        Test-ProcessMatchesService -ProcessInfo $_ -MatchTokens $svc.MatchTokens
     }
 
     if ($fallback) {

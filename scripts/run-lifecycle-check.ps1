@@ -2,7 +2,8 @@ param(
     [int]$StartupTimeoutSeconds = 120,
     [switch]$AllowPlaceholderSecrets,
     [switch]$SkipDependencyInstall,
-    [switch]$RequireHealthUp
+    [switch]$RequireHealthUp,
+    [switch]$ResetRabbitTopology
 )
 
 Set-StrictMode -Version Latest
@@ -38,6 +39,11 @@ if ($AllowPlaceholderSecrets) {
     & powershell -ExecutionPolicy Bypass -File (Join-Path $scriptDir "validate-runtime-config.ps1") -EnvFile (Join-Path $rootDir ".env") -AllowPlaceholderSecrets -ReportFile $reportFile
 } else {
     & powershell -ExecutionPolicy Bypass -File (Join-Path $scriptDir "validate-runtime-config.ps1") -EnvFile (Join-Path $rootDir ".env") -ReportFile $reportFile
+}
+
+if ($ResetRabbitTopology) {
+    Write-Host "[lifecycle] Resetting RabbitMQ dev topology..."
+    & powershell -ExecutionPolicy Bypass -File (Join-Path $scriptDir "reset-rabbitmq-topology.ps1") -EnvFile (Join-Path $rootDir ".env")
 }
 
 Write-Host "[lifecycle] Starting all services..."

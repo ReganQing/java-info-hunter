@@ -17,11 +17,11 @@ try:
 
     # Declare queues
     queues = [
-        'crawler.raw.content.queue',
+        'processor.raw.content.queue',
         'crawler.content.encoded.queue',
         'crawler.crawl.result.queue',
         'crawler.crawl.error.queue',
-        'crawler.raw.content.dlq',
+        'processor.raw.content.dlq',
         'crawler.content.encoded.dlq'
     ]
 
@@ -31,11 +31,11 @@ try:
 
     # Declare bindings
     bindings = [
-        ('crawler.raw.content.queue', 'crawler.direct', 'raw.content'),
+        ('processor.raw.content.queue', 'crawler.direct', 'raw.content'),
         ('crawler.content.encoded.queue', 'crawler.direct', 'content.encoded'),
         ('crawler.crawl.result.queue', 'crawler.direct', 'crawl.result'),
         ('crawler.crawl.error.queue', 'crawler.direct', 'crawl.error'),
-        ('crawler.raw.content.dlq', 'dead.letter.direct', 'raw.content.dlq'),
+        ('processor.raw.content.dlq', 'dead.letter.direct', 'processor.raw.content.dlq'),
         ('crawler.content.encoded.dlq', 'dead.letter.direct', 'content.encoded.dlq')
     ]
 
