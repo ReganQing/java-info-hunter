@@ -6,6 +6,7 @@ param(
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "report-common.ps1")
 
 function Read-EnvFile {
     param([string]$Path)
@@ -145,13 +146,15 @@ Assert-Compare -Values $values -LeftKey "CRAWLER_RABBITMQ_CONCURRENCY" -Operator
 Assert-Compare -Values $values -LeftKey "PROCESSOR_RABBITMQ_CONCURRENCY" -Operator "<=" -RightKey "PROCESSOR_RABBITMQ_MAX_CONCURRENCY"
 
 if ($ReportFile -ne "") {
-    $report = @(
-        "status=passed",
-        ("checked_at=" + (Get-Date).ToString("s")),
-        ("env_file=" + $EnvFile),
-        ("allow_placeholder_secrets=" + $AllowPlaceholderSecrets.IsPresent)
-    )
-    Set-Content -Path $ReportFile -Value $report -Encoding ascii
+    $report = [ordered]@{
+        schemaVersion = "a5-5.v1"
+        reportType = "preflight"
+        status = "passed"
+        checkedAt = (Get-Date).ToString("s")
+        envFile = $EnvFile
+        allowPlaceholderSecrets = $AllowPlaceholderSecrets.IsPresent
+    }
+    Write-JsonReport -Path $ReportFile -Report $report
 }
 
 Write-Host "[config-check] Runtime configuration passed."

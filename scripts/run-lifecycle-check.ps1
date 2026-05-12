@@ -3,15 +3,51 @@ param(
     [switch]$AllowPlaceholderSecrets,
     [switch]$SkipDependencyInstall,
     [switch]$RequireHealthUp,
-    [switch]$ResetRabbitTopology
+    [switch]$ResetRabbitTopology,
+    [string]$ReportFile = ""
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
+. (Join-Path $PSScriptRoot "report-common.ps1")
 
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $rootDir = Split-Path -Parent $scriptDir
-$reportFile = Join-Path $scriptDir "preflight-report.txt"
+$preflightReportFile = Join-Path $scriptDir "preflight-report.json"
+if ($ReportFile -eq "") {
+    $ReportFile = Join-Path $scriptDir "lifecycle-report.json"
+}
+
+$report = [ordered]@{
+    schemaVersion = "a5-5.v1"
+    reportType = "lifecycle"
+    status = "running"
+    checkedAt = (Get-Date).ToString("s")
+    completedAt = $null
+    parameters = [ordered]@{
+        startupTimeoutSeconds = $StartupTimeoutSeconds
+        allowPlaceholderSecrets = $AllowPlaceholderSecrets.IsPresent
+        skipDependencyInstall = $SkipDependencyInstall.IsPresent
+        requireHealthUp = $RequireHealthUp.IsPresent
+        resetRabbitTopology = $ResetRabbitTopology.IsPresent
+    }
+    preflight = [ordered]@{
+        status = "pending"
+        reportFile = $preflightReportFile
+    }
+    rabbitTopologyReset = [ordered]@{
+        status = $(if ($ResetRabbitTopology) { "pending" } else { "skipped" })
+    }
+    services = @(
+        [ordered]@{ name = "api"; port = 8080; healthUrl = "http://localhost:8080/actuator/health"; startup = "pending"; health = $(if ($RequireHealthUp) { "pending" } else { "skipped" }) },
+        [ordered]@{ name = "crawler"; port = 8081; healthUrl = "http://localhost:8081/actuator/health"; startup = "pending"; health = $(if ($RequireHealthUp) { "pending" } else { "skipped" }) },
+        [ordered]@{ name = "processor"; port = 8082; healthUrl = "http://localhost:8082/actuator/health"; startup = "pending"; health = $(if ($RequireHealthUp) { "pending" } else { "skipped" }) }
+    )
+    shutdown = [ordered]@{
+        status = "pending"
+    }
+    error = $null
+}
 
 function Show-ServiceLogTail {
     param(
@@ -35,20 +71,28 @@ function Show-ServiceLogTail {
 }
 
 Write-Host "[lifecycle] Preflight config check..."
-if ($AllowPlaceholderSecrets) {
-    & powershell -ExecutionPolicy Bypass -File (Join-Path $scriptDir "validate-runtime-config.ps1") -EnvFile (Join-Path $rootDir ".env") -AllowPlaceholderSecrets -ReportFile $reportFile
-} else {
-    & powershell -ExecutionPolicy Bypass -File (Join-Path $scriptDir "validate-runtime-config.ps1") -EnvFile (Join-Path $rootDir ".env") -ReportFile $reportFile
-}
-
-if ($ResetRabbitTopology) {
-    Write-Host "[lifecycle] Resetting RabbitMQ dev topology..."
-    & powershell -ExecutionPolicy Bypass -File (Join-Path $scriptDir "reset-rabbitmq-topology.ps1") -EnvFile (Join-Path $rootDir ".env")
-}
-
-Write-Host "[lifecycle] Starting all services..."
 $started = $false
 try {
+    if ($AllowPlaceholderSecrets) {
+        & powershell -ExecutionPolicy Bypass -File (Join-Path $scriptDir "validate-runtime-config.ps1") -EnvFile (Join-Path $rootDir ".env") -AllowPlaceholderSecrets -ReportFile $preflightReportFile
+    } else {
+        & powershell -ExecutionPolicy Bypass -File (Join-Path $scriptDir "validate-runtime-config.ps1") -EnvFile (Join-Path $rootDir ".env") -ReportFile $preflightReportFile
+    }
+    if ($LASTEXITCODE -ne 0) {
+        throw "[lifecycle] preflight config check failed."
+    }
+    $report.preflight.status = "passed"
+
+    if ($ResetRabbitTopology) {
+        Write-Host "[lifecycle] Resetting RabbitMQ dev topology..."
+        & powershell -ExecutionPolicy Bypass -File (Join-Path $scriptDir "reset-rabbitmq-topology.ps1") -EnvFile (Join-Path $rootDir ".env")
+        if ($LASTEXITCODE -ne 0) {
+            throw "[lifecycle] rabbit topology reset failed."
+        }
+        $report.rabbitTopologyReset.status = "passed"
+    }
+
+    Write-Host "[lifecycle] Starting all services..."
     if ($AllowPlaceholderSecrets) {
         $env:JIH_ALLOW_PLACEHOLDER_SECRETS = "1"
     }
@@ -103,6 +147,8 @@ try {
 
     foreach ($svc in $services) {
         Write-Host ("[lifecycle] Startup check passed: {0} (port {1})" -f $svc.Name, $svc.Port)
+        $svcReport = @($report.services | Where-Object { $_.name -eq $svc.Name })[0]
+        $svcReport.startup = "passed"
     }
 
     # Phase 2: optional strict health==UP
@@ -144,15 +190,39 @@ try {
 
         foreach ($svc in $services) {
             Write-Host ("[lifecycle] Health check passed: {0} ({1})" -f $svc.Name, $svc.Url)
+            $svcReport = @($report.services | Where-Object { $_.name -eq $svc.Name })[0]
+            $svcReport.health = "passed"
         }
     }
 
+    $report.shutdown.status = "pending"
+    $report.status = "passed"
     Write-Host "[lifecycle] Completed successfully."
+} catch {
+    $report.status = "failed"
+    if ($report.preflight.status -eq "pending") {
+        $report.preflight.status = "failed"
+    }
+    if ($ResetRabbitTopology -and $report.rabbitTopologyReset.status -eq "pending") {
+        $report.rabbitTopologyReset.status = "failed"
+    }
+    $report.error = [ordered]@{
+        message = $_.Exception.Message
+        type = $_.Exception.GetType().FullName
+    }
+    throw
 }
 finally {
     if ($started) {
         Write-Host "[lifecycle] Stopping all services..."
         & (Join-Path $scriptDir "stop-all.bat")
+        if ($LASTEXITCODE -eq 0) {
+            $report.shutdown.status = "passed"
+        } else {
+            $report.shutdown.status = "failed"
+        }
+    } else {
+        $report.shutdown.status = "skipped"
     }
 
     if (Test-Path Env:\JIH_ALLOW_PLACEHOLDER_SECRETS) {
@@ -161,4 +231,8 @@ finally {
     if (Test-Path Env:\JIH_SKIP_DEP_INSTALL) {
         Remove-Item Env:\JIH_SKIP_DEP_INSTALL -ErrorAction SilentlyContinue
     }
+
+    $report.completedAt = (Get-Date).ToString("s")
+    Write-JsonReport -Path $ReportFile -Report $report
+    Write-Host ("[lifecycle] Report written to {0}" -f $ReportFile)
 }

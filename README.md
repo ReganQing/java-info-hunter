@@ -339,7 +339,25 @@ Recommended local safety baseline:
 - Keep Maven heap at `1024 MB`
 - Stop when host CPU is `>= 75%` for 3 consecutive samples
 - Stop when host committed memory is `>= 80%` for 3 consecutive samples
-- Review `scripts/safe-smoke-report.txt` after each run for peak values and sample history
+- Review `scripts/safe-smoke-report.json` after each run for peak values and sample history
+
+Unified baseline report (lifecycle + smoke):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run-runtime-baseline.ps1 `
+  -AllowPlaceholderSecrets `
+  -SkipDependencyInstall `
+  -ResetRabbitTopology `
+  -RequireHealthUp `
+  -DisableSmokeAlsoMake
+```
+
+Generated machine-readable reports:
+
+- `scripts/preflight-report.json`
+- `scripts/lifecycle-report.json`
+- `scripts/safe-smoke-report.json`
+- `scripts/runtime-baseline-report.json`
 
 ---
 
