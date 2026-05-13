@@ -29,3 +29,22 @@ function Read-JsonReport {
     return (Get-Content -Path $Path -Raw | ConvertFrom-Json)
 }
 
+function Get-ReportArchiveRoot {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ScriptRoot
+    )
+
+    return (Join-Path $ScriptRoot "history")
+}
+
+function Get-ReportArchiveDir {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$ScriptRoot,
+        [Parameter(Mandatory = $true)]
+        [string]$ReportType
+    )
+
+    return (Join-Path (Get-ReportArchiveRoot -ScriptRoot $ScriptRoot) $ReportType)
+}

@@ -6,6 +6,10 @@ param(
     [string]$SmokeModule = "javainfohunter-crawler",
     [string]$SmokeTestPattern = "CrawlerHealthIndicatorTest",
     [switch]$DisableSmokeAlsoMake,
+    [switch]$ArchiveHistory,
+    [switch]$CompareAgainstLatest,
+    [double]$CpuRegressionThresholdPercent = 25,
+    [double]$MemoryRegressionThresholdPercent = 25,
     [string]$ReportFile = ""
 )
 
@@ -19,17 +23,23 @@ if ($ReportFile -eq "") {
 
 $lifecycleReportFile = Join-Path $PSScriptRoot "lifecycle-report.json"
 $safeSmokeReportFile = Join-Path $PSScriptRoot "safe-smoke-report.json"
+$archiveReportFile = Join-Path $PSScriptRoot "runtime-baseline-archive-report.json"
+$compareReportFile = Join-Path $PSScriptRoot "runtime-baseline-compare-report.json"
 
 $report = [ordered]@{
-    schemaVersion = "a5-5.v1"
+    schemaVersion = "a5-6.v1"
     reportType = "runtime-baseline"
     status = "running"
     checkedAt = (Get-Date).ToString("s")
     completedAt = $null
     lifecycleReportFile = $lifecycleReportFile
     safeSmokeReportFile = $safeSmokeReportFile
+    archiveReportFile = $archiveReportFile
+    compareReportFile = $compareReportFile
     lifecycle = $null
     safeSmoke = $null
+    archive = $null
+    comparison = $null
     error = $null
 }
 
@@ -70,6 +80,36 @@ try {
     } else {
         $report.status = "failed"
     }
+
+    $report.completedAt = (Get-Date).ToString("s")
+    Write-JsonReport -Path $ReportFile -Report $report
+
+    if ($ArchiveHistory) {
+        & powershell -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot "archive-runtime-baseline.ps1") -SourceReportFile $ReportFile -SummaryReportFile $archiveReportFile
+        if ($LASTEXITCODE -ne 0) {
+            throw "[runtime-baseline] archive step failed."
+        }
+        $report.archive = Read-JsonReport -Path $archiveReportFile
+    }
+
+    if ($CompareAgainstLatest) {
+        $compareArgs = @(
+            "-ExecutionPolicy", "Bypass",
+            "-File", (Join-Path $PSScriptRoot "compare-runtime-baseline.ps1"),
+            "-CurrentReportFile", $ReportFile,
+            "-ReportFile", $compareReportFile,
+            "-CpuRegressionThresholdPercent", $CpuRegressionThresholdPercent,
+            "-MemoryRegressionThresholdPercent", $MemoryRegressionThresholdPercent
+        )
+        & powershell @compareArgs
+        if ($LASTEXITCODE -ne 0) {
+            throw "[runtime-baseline] compare step failed."
+        }
+        $report.comparison = Read-JsonReport -Path $compareReportFile
+        if ($report.comparison.status -eq "regressed") {
+            $report.status = "regressed"
+        }
+    }
 } catch {
     $report.status = "failed"
     $report.error = [ordered]@{
@@ -82,6 +122,12 @@ try {
     }
     if (Test-Path $safeSmokeReportFile) {
         $report.safeSmoke = Read-JsonReport -Path $safeSmokeReportFile
+    }
+    if (Test-Path $archiveReportFile) {
+        $report.archive = Read-JsonReport -Path $archiveReportFile
+    }
+    if (Test-Path $compareReportFile) {
+        $report.comparison = Read-JsonReport -Path $compareReportFile
     }
     throw
 } finally {

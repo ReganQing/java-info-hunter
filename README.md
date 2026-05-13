@@ -359,6 +359,32 @@ Generated machine-readable reports:
 - `scripts/safe-smoke-report.json`
 - `scripts/runtime-baseline-report.json`
 
+Archive the current baseline and compare against the latest archived run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run-runtime-baseline.ps1 `
+  -AllowPlaceholderSecrets `
+  -SkipDependencyInstall `
+  -ResetRabbitTopology `
+  -RequireHealthUp `
+  -DisableSmokeAlsoMake `
+  -ArchiveHistory
+
+powershell -ExecutionPolicy Bypass -File scripts/run-runtime-baseline.ps1 `
+  -AllowPlaceholderSecrets `
+  -SkipDependencyInstall `
+  -ResetRabbitTopology `
+  -RequireHealthUp `
+  -DisableSmokeAlsoMake `
+  -CompareAgainstLatest
+```
+
+Additional history and comparison outputs:
+
+- `scripts/history/runtime-baseline/latest.json`
+- `scripts/runtime-baseline-archive-report.json`
+- `scripts/runtime-baseline-compare-report.json`
+
 ---
 
 ## Development
