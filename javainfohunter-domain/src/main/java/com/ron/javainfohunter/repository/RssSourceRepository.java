@@ -1,6 +1,7 @@
 package com.ron.javainfohunter.repository;
 
 import com.ron.javainfohunter.entity.RssSource;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -173,7 +174,8 @@ public interface RssSourceRepository extends JpaRepository<RssSource, Long> {
      * @param ids List of RSS source IDs
      * @param lastCrawledAt New last crawled timestamp
      */
-    @Query("UPDATE RssSource rs SET rs.lastCrawledAt = :lastCrawledAt WHERE rs.id IN :ids")
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = "UPDATE rss_sources SET last_crawled_at = :lastCrawledAt WHERE id IN :ids", nativeQuery = true)
     void bulkUpdateLastCrawledAt(@Param("ids") List<Long> ids, @Param("lastCrawledAt") Instant lastCrawledAt);
 
     /**

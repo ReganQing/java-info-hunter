@@ -42,7 +42,7 @@ public class ApiEndpointsE2ETest extends BaseExternalServiceTest {
     @BeforeEach
     void setUp() {
         String baseUrl = "http://localhost:" + port;
-        apiHelper = new ApiTestHelper(baseUrl);
+        apiHelper = new ApiTestHelper(baseUrl).login("admin", "admin123");
     }
 
     // ========================================
@@ -63,7 +63,7 @@ public class ApiEndpointsE2ETest extends BaseExternalServiceTest {
                 "url", "https://example.com/rss.xml",
                 "category", "Technology",
                 "isActive", true,
-                "crawlIntervalMinutes", 60
+                "crawlIntervalSeconds", 300
         );
 
         Response response = apiHelper.createRssSource(requestBody);
@@ -159,7 +159,7 @@ public class ApiEndpointsE2ETest extends BaseExternalServiceTest {
                 "url", "https://example.com/updated-rss.xml",
                 "category", "Tech",
                 "isActive", false,
-                "crawlIntervalMinutes", 120
+                "crawlIntervalSeconds", 600
         );
 
         Response updateResponse = apiHelper.updateRssSource(testSourceId, updateRequest);

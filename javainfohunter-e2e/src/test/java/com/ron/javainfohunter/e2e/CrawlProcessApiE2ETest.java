@@ -40,7 +40,7 @@ public class CrawlProcessApiE2ETest extends BaseExternalServiceTest {
     @BeforeEach
     void setUp() {
         String baseUrl = "http://localhost:" + port;
-        apiHelper = new ApiTestHelper(baseUrl);
+        apiHelper = new ApiTestHelper(baseUrl).login("admin", "admin123");
     }
 
     /**
@@ -63,7 +63,7 @@ public class CrawlProcessApiE2ETest extends BaseExternalServiceTest {
                 "url", testFeedUrl,
                 "category", "Technology",
                 "isActive", true,
-                "crawlIntervalMinutes", 60
+                "crawlIntervalSeconds", 300
         );
 
         // Act

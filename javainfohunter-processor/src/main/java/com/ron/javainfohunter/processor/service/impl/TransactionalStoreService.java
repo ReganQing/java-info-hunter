@@ -150,7 +150,9 @@ class TransactionalStoreService {
                 .keywords(message.getKeywords() != null ? message.getKeywords().toArray(new String[0]) : null)
                 .language("zh")
                 .readingTimeMinutes(calculateReadingTime(rawContent.getRawContent()))
-                .isPublished(false)
+                // Published immediately on processing — News entity auto-sets publishedAt
+                // via @PrePersist when isPublished=true. No separate review/publish step exists.
+                .isPublished(true)
                 .build();
     }
 
