@@ -188,9 +188,25 @@ public interface NewsRepository extends JpaRepository<News, Long> {
      * @param pageable Pagination parameters
      * @return Page of matching news
      */
-    @Query("SELECT n FROM News n WHERE n.isPublished = true AND " +
-           "(LOWER(n.title) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
-           "LOWER(CAST(n.summary AS string)) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
+    @Query(value = """
+           SELECT *
+           FROM news n
+           WHERE n.is_published = true
+             AND (
+               LOWER(n.title) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+               OR LOWER(n.summary) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+             )
+           """,
+           countQuery = """
+           SELECT COUNT(*)
+           FROM news n
+           WHERE n.is_published = true
+             AND (
+               LOWER(n.title) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+               OR LOWER(n.summary) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+             )
+           """,
+           nativeQuery = true)
     Page<News> searchPublished(@Param("searchTerm") String searchTerm, Pageable pageable);
 
     /**
@@ -363,10 +379,27 @@ public interface NewsRepository extends JpaRepository<News, Long> {
      * @return Page of matching news
      */
     @EntityGraph(attributePaths = {"rawContent", "rawContent.rssSource"})
-    @Query("SELECT n FROM News n WHERE n.isPublished = true AND " +
-           "(LOWER(n.title) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
-           "LOWER(CAST(COALESCE(n.summary, '') AS string)) LIKE LOWER(CONCAT('%', :searchTerm, '%')) OR " +
-           "LOWER(CAST(COALESCE(n.fullContent, '') AS string)) LIKE LOWER(CONCAT('%', :searchTerm, '%')))")
+    @Query(value = """
+           SELECT *
+           FROM news n
+           WHERE n.is_published = true
+             AND (
+               LOWER(n.title) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+               OR LOWER(COALESCE(n.summary, '')) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+               OR LOWER(COALESCE(n.full_content, '')) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+             )
+           """,
+           countQuery = """
+           SELECT COUNT(*)
+           FROM news n
+           WHERE n.is_published = true
+             AND (
+               LOWER(n.title) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+               OR LOWER(COALESCE(n.summary, '')) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+               OR LOWER(COALESCE(n.full_content, '')) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+             )
+           """,
+           nativeQuery = true)
     Page<News> fullTextSearch(@Param("searchTerm") String searchTerm, Pageable pageable);
 
     /**

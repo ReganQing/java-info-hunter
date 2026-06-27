@@ -3,6 +3,7 @@ package com.ron.javainfohunter.e2e.helper;
 import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
+import com.ron.javainfohunter.api.dto.response.AuthResponse;
 
 import java.util.Map;
 import java.util.UUID;
@@ -44,10 +45,16 @@ public class ApiTestHelper {
      * @return RequestSpecification
      */
     public RequestSpecification getBaseRequest() {
-        return given()
+        RequestSpecification request = given()
                 .log().ifValidationFails()
                 .header("Content-Type", "application/json")
                 .header("Accept", "application/json");
+
+        if (authToken != null && !authToken.isBlank()) {
+            request.header("Authorization", "Bearer " + authToken);
+        }
+
+        return request;
     }
 
     /**
@@ -58,6 +65,27 @@ public class ApiTestHelper {
      */
     public ApiTestHelper withAuthToken(String token) {
         this.authToken = token;
+        return this;
+    }
+
+    /**
+     * Authenticate with username/password and store the returned access token.
+     *
+     * @param username Login username
+     * @param password Login password
+     * @return this for fluent API
+     */
+    public ApiTestHelper login(String username, String password) {
+        Response response = given()
+                .log().ifValidationFails()
+                .header("Content-Type", "application/json")
+                .header("Accept", "application/json")
+                .body(Map.of("username", username, "password", password))
+                .post("/api/v1/auth/login");
+
+        response.then().statusCode(200);
+        AuthResponse authResponse = response.as(AuthResponse.class);
+        this.authToken = authResponse.getAccessToken();
         return this;
     }
 
