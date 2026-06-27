@@ -29,7 +29,7 @@ public class RssSourceRequest {
      * Human-readable name for the RSS source
      */
     @NotBlank(message = "Name is required")
-    @Pattern(regexp = "^[\\p{Alnum}\\s\\-_\\.]{1,255}$", message = "Name must be 1-255 alphanumeric characters")
+    @Pattern(regexp = "^[\\p{L}\\p{N}\\s\\-_\\.]{1,255}$", message = "Name must be 1-255 letters, numbers, spaces, or -_.")
     private String name;
 
     /**

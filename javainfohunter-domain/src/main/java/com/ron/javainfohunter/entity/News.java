@@ -80,14 +80,12 @@ public class News {
      * AI-generated summary
      */
     @NotBlank(message = "Summary cannot be blank")
-    @Lob
     @Column(nullable = false, columnDefinition = "TEXT")
     private String summary;
 
     /**
      * Cleaned and structured full content
      */
-    @Lob
     @Column(columnDefinition = "TEXT")
     private String fullContent;
 

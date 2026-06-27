@@ -127,9 +127,9 @@ BEGIN
     RETURN QUERY
     SELECT
         n.id,
-        n.title,
-        n.summary,
-        n.category,
+        n.title::TEXT,
+        n.summary::TEXT,
+        n.category::VARCHAR,
         n.published_at,
         ts_rank(n.fts_vector, v_tsquery) AS rank
     FROM news n

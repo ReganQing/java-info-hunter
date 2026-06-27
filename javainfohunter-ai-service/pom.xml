@@ -33,6 +33,13 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- Lombok: only used by learning/reference test DTOs (News, RawContent) -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>test</scope>
+        </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-amqp</artifactId>
